@@ -8,6 +8,7 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from src.pipelines.omnivid_alpha import OmniVidAlpha
+from src.pipelines.omnivid_intrinsic import OmniVidIntrinsic
 from src.trainers.omnivid_alpha_trainer import ModelCheckpointCallback_OmnividAlpha, TensorboardLoggingCallback_OmnividAlpha, Trainer_OmnividAlpha
 
 DATASET_REGISTRY = {
@@ -17,6 +18,7 @@ DATASET_REGISTRY = {
 
 MODEL_REGISTRY = {
     'OmniVidAlpha': OmniVidAlpha,
+    'OmniVidIntrinsic': OmniVidIntrinsic
 }
 
 OPTIMIZER_REGISTRY = {

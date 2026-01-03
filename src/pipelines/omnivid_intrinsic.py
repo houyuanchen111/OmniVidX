@@ -672,8 +672,8 @@ class WanVideoPipeline(BasePipeline):
                 if cfg_merge:
                     noise_pred_posi, noise_pred_nega = noise_pred_posi.chunk(2, dim=0)
                 else:
-                    noise_pred_nega = self.model_fn(**models, **inputs_shared, **inputs_nega, timestep=timestep) # nega prompt的噪声
-                noise_pred = noise_pred_nega + cfg_scale * (noise_pred_posi - noise_pred_nega) # cfg生效的核心代码
+                    noise_pred_nega = self.model_fn(**models, **inputs_shared, **inputs_nega, timestep=timestep) 
+                noise_pred = noise_pred_nega + cfg_scale * (noise_pred_posi - noise_pred_nega) 
             else:
                 noise_pred = noise_pred_posi
 
@@ -886,7 +886,7 @@ class WanVideoUnit_NoiseInitializer(PipelineUnit):
 
     def process(self, pipe: WanVideoPipeline, height, width, num_frames, seed, rand_device):
         length = (num_frames - 1) // 4 + 1 
-        noise = pipe.generate_noise((4, 16, length, height//8, width//8), seed=seed, rand_device=rand_device) # 三种模态的noise应该不一样
+        noise = pipe.generate_noise((4, 16, length, height//8, width//8), seed=seed, rand_device=rand_device) 
         return {"noise": noise}
 
 class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
@@ -1338,7 +1338,7 @@ def model_fn_wan_video(
     x = dit.unpatchify(x, (f, h, w)) # type: ignore just a rearrangement
     return x
 
-class WanTrainingModule_wan2_1_14b_t2v_pbr_lora_video_train_v6(DiffusionTrainingModule): 
+class OmniVidIntrinsic(DiffusionTrainingModule): 
     def __init__(
         self,
         model_paths=None, model_id_with_origin_paths=None,
