@@ -20,6 +20,6 @@ model:
     lora_target_modules: "self_attn.q,self_attn.k,self_attn.v,self_attn.o,ffn.0,ffn.2"
     lora_rank: 32
     lora_modalities: ["com","pha","fgr","bgr"] 
-    resume_from_checkpoint: "outputs/train_wan21_14b_t2v_matte_lora_video_train_w_image_w_prompt_train_v9_20251227_1652379+1320/epoch_18/diffusion_pytorch_model.safetensors"
+    resume_from_checkpoint: "checkpoints/omnivid_alpha.safetensors"
 
 
