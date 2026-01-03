@@ -20,6 +20,6 @@ model:
     lora_target_modules: "self_attn.q,self_attn.k,self_attn.v,self_attn.o,ffn.0,ffn.2"
     lora_rank: 32
     lora_modalities: ["rgb","albedo","irradiance","normal"] 
-    resume_from_checkpoint: "checkpoints/omnivid_alpha.safetensors"
+    resume_from_checkpoint: "checkpoints/omnivid_intrinsic.safetensors"
 
 
