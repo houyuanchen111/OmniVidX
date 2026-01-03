@@ -1,4 +1,3 @@
-import torchvision
 from numpy import vdot
 import torch, types, copy,json,random
 from typing import Optional, Union
@@ -10,7 +9,7 @@ from safetensors.torch import load_file
 from ..trainers.util import DiffusionTrainingModule
 from .util import BasePipeline, PipelineUnit, PipelineUnitRunner, ModelConfig, TeaCache, TemporalTiler_BCTHW
 from ..models import ModelManager, load_state_dict
-from ..models.wan_video_dit_pbr_video_v3 import WanModel, RMSNorm, sinusoidal_embedding_1d
+from ..models.wan_video_dit_intrinsic import WanModel, RMSNorm, sinusoidal_embedding_1d
 from ..models.wan_video_text_encoder import WanTextEncoder, T5RelativeEmbedding, T5LayerNorm
 from ..models.wan_video_vae import WanVideoVAE, RMS_norm, CausalConv3d, Upsample 
 from ..models.wan_video_image_encoder import WanImageEncoder
@@ -44,15 +43,11 @@ class WanVideoPipeline(BasePipeline):
         self.vace: VaceWanModel = None # type: ignore
         self.in_iteration_models = ("dit", "motion_controller", "vace")
         self.unit_runner = PipelineUnitRunner()
-        #改回硬编码，发现pipe的代码还是必须要改动的
-        self.units = [ # 硬编码
+        self.units = [
             WanVideoUnit_ShapeChecker(),
-            # WanVideoUnit_Modality_Embedder(),
             WanVideoUnit_NoiseInitializer(),
             WanVideoUnit_InputVideoEmbedder(),
             WanVideoUnit_PromptEmbedder(),
-            # WanVideoUnit_ControlVideoEmbedder(),
-            # WanVideoUnit_ClipFeatureEmbedder(),
         ]
        
         self.model_fn = model_fn_wan_video
@@ -178,27 +173,8 @@ class WanVideoPipeline(BasePipeline):
 
         noise_pred = self.model_fn(**inputs, timestep=timestep) # model_fn are used to predict noise
         if training_mode == "t2RAIN":
-            dataset_name = inputs.get("dataset_name", "")
-            if dataset_name and "hypersim" in dataset_name and inputs["num_frames"] == 21:
-                # hypersim 数据集在 t2RAIN 模式下，loss 设为 0（不影响梯度回传）
-                print(f"✅ hypersim 数据集在 t2RAIN_v 模式下，loss 设为 0（不影响梯度回传）")
-                loss = 0 * torch.nn.functional.mse_loss(noise_pred.float(), training_target.float())
-            elif dataset_name and "interiorverse" in dataset_name:
-                # interiorverse 数据集在 t2RAIN 模式下，loss 设为 0（不影响梯度回传）
-                print(f"✅ interiorverse 数据集在 t2RAIN 模式下，loss 设为 0（不影响梯度回传）")
-                loss = 0 * torch.nn.functional.mse_loss(noise_pred.float(), training_target.float())
-            elif dataset_name and "Sintel" in dataset_name:
-                # Sintel 数据集在 t2RAIN 模式下，loss 设为 0（不影响梯度回传）
-                print(f"✅ Sintel 数据集在 t2RAIN 模式下，loss 设为 0（不影响梯度回传）")
-                loss = 0 * torch.nn.functional.mse_loss(noise_pred.float(), training_target.float())
-            else:
-                loss = torch.nn.functional.mse_loss(noise_pred.float(), training_target.float()) 
+            loss = torch.nn.functional.mse_loss(noise_pred.float(), training_target.float()) 
         elif training_mode == "R2AIN":
-            dataset_name = inputs.get("dataset_name", "")
-            if dataset_name and "interiorverse" in dataset_name and inputs["num_frames"] == 1:
-                # interiorverse 数据集在 R2AIN 模式下，loss 设为 0（不影响梯度回传）
-                print(f"✅ interiorverse 数据集在 R2AIN_i 模式下，只算albedo和normal的loss")
-                loss = torch.nn.functional.mse_loss(noise_pred.float()[[1,3]], training_target.float()[[1,3]])
             loss = torch.nn.functional.mse_loss(noise_pred.float()[[1,2,3]], training_target.float()[[1,2,3]])
         elif training_mode == "A2RIN":
             loss = torch.nn.functional.mse_loss(noise_pred.float()[[0,2,3]], training_target.float()[[0,2,3]])
@@ -379,67 +355,6 @@ class WanVideoPipeline(BasePipeline):
         )
         torch.cuda.set_device(dist.get_rank())
             
-    def get_modality_data(self, data: dict, modality_name: Optional[str] = None):
-        """
-        获取模态数据，支持多种模态类型
-        
-        Args:
-            data: 包含各种模态数据的字典
-            
-        Returns:
-            包含模态索引、输入视频和对应模态数据的字典
-        """
-        # 定义支持的模态类型和对应的键名
-        MODALITY_MAPPING = {
-            0: "albedo",
-            1: "basecolor", 
-            2: "depth",
-            3: "material",
-            4: "normal"
-        }
-        
-        # 如果指定了模态名称，仅返回该模态
-        if modality_name is not None:
-            if modality_name not in MODALITY_MAPPING.values():
-                raise ValueError(f"不支持的模态名称: {modality_name}. 支持: {list(MODALITY_MAPPING.values())}")
-            if data.get(modality_name) is None:
-                raise ValueError(f"输入数据中不存在模态: {modality_name}")
-            modality_key = modality_name
-            # 反查索引
-            modality_index = [idx for idx, name in MODALITY_MAPPING.items() if name == modality_key][0]
-        else:
-            # 获取可用的模态类型
-            available_modalities = []
-            for idx, key in MODALITY_MAPPING.items():
-                if data.get(key) is not None:
-                    available_modalities.append(idx)
-            
-            if not available_modalities:
-                raise ValueError("没有找到任何可用的模态数据")
-            
-            # 随机选择模态索引
-            modality_index = random.choice(available_modalities)
-            modality_key = MODALITY_MAPPING[modality_index]
-        
-        # 获取模态数据
-        modality_data = data[modality_key]
-        
-        # 构建返回字典
-        return_dict = {
-            "modality_index": modality_index,
-            "input_videos": [modality_data],
-            modality_key: [modality_data]
-        }
-        
-        # 统一进行设备转换
-        for key in ["input_videos", modality_key]:
-            if key in return_dict and return_dict[key] is not None:
-                return_dict[key] = [
-                    tensor.to(self.device).to(self.torch_dtype) 
-                    for tensor in return_dict[key]
-                ]
-        
-        return return_dict
 
     def enable_usp(self):
         from xfuser.core.distributed import get_sequence_parallel_world_size
@@ -483,52 +398,6 @@ class WanVideoPipeline(BasePipeline):
             video_output.append(image)
         return torch.stack(video_output, dim=1) # C T H W
 
-    def robust_min_max_normalize(self,
-        tensor: torch.Tensor, 
-        quantiles: tuple[float, float] = (0.001, 0.99), 
-        per_channel: bool = False, 
-        eps: float = 1e-6
-    ) -> torch.Tensor:
-        """
-        Args:
-            tensor: [H, W, 3]
-            quantiles: (0.001, 0.99)
-            per_channel: True
-            eps: 1e-6
-        Returns:
-            [H, W, 3]
-        """
-        assert tensor.ndim == 3 and tensor.shape[2] == 3, f"输入张量形状应为 [H, W, 3]，但得到 {tensor.shape}"
-        tensor_cache = tensor.clone()
-        tensor = tensor.to(torch.float32)
-        if per_channel:
-            tensor_flat = tensor.permute(2, 0, 1).flatten(start_dim=1)
-            min_vals = torch.nanquantile(tensor_flat, quantiles[0], dim=1)
-            max_vals = torch.nanquantile(tensor_flat, quantiles[1], dim=1)
-            min_vals = min_vals.view(1, 1, 3)
-            max_vals = max_vals.view(1, 1, 3)
-
-        else:
-            min_vals = torch.nanquantile(tensor, quantiles[0])
-            max_vals = torch.nanquantile(tensor, quantiles[1])
-        denominator = max_vals - min_vals
-        denominator = torch.where(denominator < eps, torch.tensor(eps, device=tensor.device), denominator)
-        normalized_tensor = (tensor - min_vals) / denominator
-        normalized_tensor = torch.clamp(normalized_tensor, 0, 1)
-        normalized_tensor = normalized_tensor.to(tensor_cache.dtype)
-        return normalized_tensor 
-    
-    def vae_disparity_output_to_video(self, vae_output, pattern="B C T H W"):
-        # 这个处理不知道合不合理，mask先不加
-        if pattern != "T H W C":
-            vae_output = reduce(vae_output, f"{pattern} -> T H W C", reduction="mean")
-        assert vae_output.min() >= -1 and vae_output.max() <= 1, "disparity is not in [-1,1]"
-        for i in range(vae_output.shape[0]):
-            image = vae_output[i] # H W C
-            image = self.robust_min_max_normalize(image)
-            vae_output[i] = image * 2 - 1  # 这个是为了算loss的
-        return vae_output.permute(3,0,1,2) # C T H W
-    
     @staticmethod
     def from_pretrained(
         torch_dtype: torch.dtype = torch.bfloat16,
@@ -540,7 +409,6 @@ class WanVideoPipeline(BasePipeline):
         redirect_common_files: bool = True,
         use_usp=False,
     ):
-        # Redirect model path, 调用以实现pipe的实例化
         if redirect_common_files:
             redirect_dict = {
                 "models_t5_umt5-xxl-enc-bf16.pth": "Wan-AI/Wan2.1-T2V-1.3B",
@@ -570,9 +438,6 @@ class WanVideoPipeline(BasePipeline):
         
         # Load models
         pipe.text_encoder = model_manager.fetch_model("wan_video_text_encoder") # type: ignore
-        # pipe.dit = model_manager.fetch_model("wan_video_dit") # type: ignore
-        # 现在不需要加模块
-        #从 JSON 读取 WanModel 配置并实例化，然后加载 safetensors 权重
         config_path = "configs/wan2_1_14b_t2v_dit_config.json"
         with open(config_path, "r") as f:
             dit_kwargs = json.load(f)
@@ -609,43 +474,16 @@ class WanVideoPipeline(BasePipeline):
         if use_usp: pipe.enable_usp()
         return pipe
 
-    def normalize_tensor_by_time_to_neg1_pos1(self,tensor):
-        """
-        按T维度循环归一化到[-1,1]范围
-        """
-        C, T, H, W = tensor.shape
-        normalized_tensors = []
-        
-        for t in range(T):
-            frame = tensor[:, t, :, :]
-            min_val = frame.min()
-            max_val = frame.max()
-            
-            if max_val > min_val:
-                # 先归一化到[0,1]，再转换到[-1,1]
-                normalized_frame = (frame - min_val) / (max_val - min_val)
-                normalized_frame = normalized_frame * 2.0 - 1.0
-            else:
-                normalized_frame = torch.zeros_like(frame)
-            
-            normalized_tensors.append(normalized_frame)
-        
-        return torch.stack(normalized_tensors, dim=1)
-
-    
-    
-
     @torch.no_grad()
     def __call__(
         self,
         **kwargs 
     ):
-        # 只有inference的时候才会调用__call__()
         inputs_shared = kwargs.copy()
         num_inference_steps = inputs_shared.pop("num_inference_steps", 50)
         denoising_strength = inputs_shared.get("denoising_strength", 1.0)
         sigma_shift = inputs_shared.get("sigma_shift", 5.0)
-        prompt = inputs_shared.pop("prompt", "") # 这个需要pop，避免重复输入
+        prompt = inputs_shared.pop("prompt", "")
         tea_cache_l1_thresh = inputs_shared.pop("tea_cache_l1_thresh", None)
         tea_cache_model_id = inputs_shared.pop("tea_cache_model_id", "")
         negative_prompt = inputs_shared.pop("negative_prompt", "")

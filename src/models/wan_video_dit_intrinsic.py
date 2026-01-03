@@ -8,57 +8,37 @@ from .util import hash_state_dict_keys
 from .wan_video_camera_controller import SimpleAdapter
 
 def get_optimal_attention_mode():
-    """检测设备并返回最优的attention模式"""
+    """Detect the device and return the optimal attention mode."""
     if torch.cuda.is_available():
         try:
-            # import flash_attn_interface 
-            # return "flash_attn_3"
-            return "scaled_dot_product" # 只能用这个，flash attention 要求q k v 的序列长度相同
+            return "scaled_dot_product"
         except ModuleNotFoundError:
             return "scaled_dot_product"
     else:
         return "scaled_dot_product"
 
-# 设置attention模式
 ATTENTION_MODE = get_optimal_attention_mode()
-print(f"使用attention模式: {ATTENTION_MODE}")
+print(f"Using attention mode: {ATTENTION_MODE}")
 
 try:
-    # import flash_attn_interface
-    # FLASH_ATTN_3_AVAILABLE = True
     FLASH_ATTN_3_AVAILABLE = False
 except ModuleNotFoundError:
     FLASH_ATTN_3_AVAILABLE = False
 
-# try:
-#     import flash_attn
-#     FLASH_ATTN_2_AVAILABLE = True
-# except ModuleNotFoundError:
-#     FLASH_ATTN_2_AVAILABLE = False
-
-# try:
-#     from sageattention import sageattn
-#     SAGE_ATTN_AVAILABLE = True
-# except ModuleNotFoundError:
-#     SAGE_ATTN_AVAILABLE = False
-    
-    
 def flash_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, num_heads: int, compatibility_mode=False, drop_out:int = None):
     if compatibility_mode or ATTENTION_MODE == "scaled_dot_product":
         if torch.rand(1) < drop_out:
-            # print("drop_out")
             q = rearrange(q, "b s (n d) -> b n s d", n=num_heads)
             k = rearrange(k, "b s (n d) -> b n s d", n=num_heads)
             v = rearrange(v, "b s (n d) -> b n s d", n=num_heads)
             x = F.scaled_dot_product_attention(q, k, v)
         else:
-            # print("not drop_out")
             batch_size = q.shape[0]
             q = rearrange(q, "b s (n d) -> b n s d", n=num_heads)
             k = rearrange(k, "b s (n d) -> 1 n (b s) d", n=num_heads).repeat(batch_size, 1, 1, 1)
             v = rearrange(v, "b s (n d) -> 1 n (b s) d", n=num_heads).repeat(batch_size, 1, 1, 1)
             x = F.scaled_dot_product_attention(q, k, v)
-        x = rearrange(x, "b n s d -> b s (n d)", n=num_heads) # 只能用这个
+        x = rearrange(x, "b n s d -> b s (n d)", n=num_heads)
     elif ATTENTION_MODE == "flash_attn_3" and FLASH_ATTN_3_AVAILABLE:
         if torch.rand(1) < drop_out:
             q = rearrange(q, "b s (n d) -> b s n d", n=num_heads)
@@ -73,20 +53,7 @@ def flash_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, num_heads
         if isinstance(x,tuple):
             x = x[0]
         x = rearrange(x, "b s n d -> b s (n d)", n=num_heads)
-    # elif FLASH_ATTN_2_AVAILABLE:
-    #     q = rearrange(q, "b s (n d) -> b s n d", n=num_heads)
-    #     k = rearrange(k, "b s (n d) -> b s n d", n=num_heads)
-    #     v = rearrange(v, "b s (n d) -> b s n d", n=num_heads)
-    #     x = flash_attn.flash_attn_func(q, k, v)
-    #     x = rearrange(x, "b s n d -> b s (n d)", n=num_heads)
-    # elif SAGE_ATTN_AVAILABLE:
-    #     q = rearrange(q, "b s (n d) -> b s n d", n=num_heads)
-    #     k = rearrange(k, "b s (n d) -> b s n d", n=num_heads)
-    #     v = rearrange(v, "b s (n d) -> b s n d", n=num_heads)
-    #     x = sageattn(q, k, v)
-    #     x = rearrange(x, "b s n d -> b s (n d)", n=num_heads)
     else:
-        # 默认回退到scaled_dot_product_attention
         if torch.rand(1) < drop_out:
             q = rearrange(q, "b s (n d) -> b n s d", n=num_heads)
             k = rearrange(k, "b s (n d) -> b n s d", n=num_heads)
@@ -114,7 +81,6 @@ def sinusoidal_embedding_1d(dim, position):
 
 
 def precompute_freqs_cis_3d(dim: int, end: int = 1024, theta: float = 10000.0):
-    # 3d rope precompute
     f_freqs_cis = precompute_freqs_cis(dim - 2 * (dim // 3), end, theta)
     h_freqs_cis = precompute_freqs_cis(dim // 3, end, theta)
     w_freqs_cis = precompute_freqs_cis(dim // 3, end, theta)
@@ -122,7 +88,6 @@ def precompute_freqs_cis_3d(dim: int, end: int = 1024, theta: float = 10000.0):
 
 
 def precompute_freqs_cis(dim: int, end: int = 1024, theta: float = 10000.0):
-    # 1d rope precompute
     freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)
                    [: (dim // 2)].double() / dim))
     freqs = torch.outer(torch.arange(end, device=freqs.device), freqs)
@@ -254,7 +219,6 @@ class SelfAttention(nn.Module):
             x = self.attn(q, k, v, drop_out=drop_out)
             result = self.o(x, adapter_names=[None, "albedo", None, "normal"])
         elif training_mode == "RN2AI":
-            # print("training_mode == Inverse_Rendering")
             q = self.q(x, adapter_names=[None, "albedo", "irradiance", None])
             k = self.k(x, adapter_names=[None, "albedo", "irradiance", None])
             v = self.v(x, adapter_names=[None, "albedo", "irradiance", None])
@@ -362,58 +326,21 @@ class CrossAttention(nn.Module):
         self.attn = AttentionModule(self.num_heads) 
 
     def forward(self, x: torch.Tensor, y: torch.Tensor, drop_out: float = 1):
-        # 时间统计 - 可以注释掉
-        # import time
-        # start_time = time.time()
-        
-        # # 数据分割
-        # split_start = time.time()
         if self.has_image_input:
             img = y[:, :257]
             ctx = y[:, 257:]
         else:
             ctx = y
-        # split_time = time.time() - split_start
-        
-        # Q分支
-        # q_start = time.time()
         q = self.norm_q(self.q(x))
-        # q_time = time.time() - q_start
-        
-        # K分支
-        # k_start = time.time()
         k = self.norm_k(self.k(ctx))
-        # k_time = time.time() - k_start
-        
-        # V分支
-        # v_start = time.time()
         v = self.v(ctx)
-        # v_time = time.time() - v_start
-        
-        # 注意力计算
-        # attn_start = time.time()
-        x = self.attn(q, k, v, drop_out) # 这个是肯定要dropout用普通的attention的
-        # attn_time = time.time() - attn_start
-        
-        # 图像注意力（如果有）
-        # img_attn_time = 0
+        x = self.attn(q, k, v, drop_out)
         if self.has_image_input:
-            # img_start = time.time()
             k_img = self.norm_k_img(self.k_img(img))
             v_img = self.v_img(img)
             y = flash_attention(q, k_img, v_img, num_heads=self.num_heads)
             x = x + y
-            # img_attn_time = time.time() - img_start
-        
-        # 输出投影
-        # o_start = time.time()
         result = self.o(x)
-        # o_time = time.time() - o_start
-        
-        # 打印时间统计 - 可以注释掉
-        # total_time = time.time() - start_time
-        # print(f"CrossAttn timing - Split: {split_time:.4f}s, Q: {q_time:.4f}s, K: {k_time:.4f}s, V: {v_time:.4f}s, Attn: {attn_time:.4f}s, ImgAttn: {img_attn_time:.4f}s, O: {o_time:.4f}s, Total: {total_time:.4f}s")
-        
         return result
 
 
@@ -446,19 +373,18 @@ class DiTBlock(nn.Module):
         has_seq = len(t_mod.shape) == 4
         chunk_dim = 2 if has_seq else 1
         b = x.shape[0]
-        modulation = self.modulation.to(dtype=t_mod.dtype, device=t_mod.device).repeat(b, 1, 1) + t_mod # 可以支持不同模态不同的时间条件
+        modulation = self.modulation.to(dtype=t_mod.dtype, device=t_mod.device).repeat(b, 1, 1) + t_mod
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = modulation.chunk(6, dim=chunk_dim)
-        # msa: multi-head self-attention  mlp: multi-layer perceptron
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = (
-            self.modulation.to(dtype=t_mod.dtype, device=t_mod.device) + t_mod).chunk(6, dim=chunk_dim) # 时间条件的注入仅仅是通过一个加法而已
+            self.modulation.to(dtype=t_mod.dtype, device=t_mod.device) + t_mod).chunk(6, dim=chunk_dim)
         if has_seq:
             shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = (
                 shift_msa.squeeze(2), scale_msa.squeeze(2), gate_msa.squeeze(2),
                 shift_mlp.squeeze(2), scale_mlp.squeeze(2), gate_mlp.squeeze(2),
             )
         input_x = modulate(self.norm1(x), shift_msa, scale_msa)
-        x = self.gate(x, gate_msa, self.self_attn(input_x, freqs, drop_out=drop_out, training_mode=training_mode)) # self_attn
-        x = x + self.cross_attn(self.norm3(x), context) # 这个drop_out 默认1
+        x = self.gate(x, gate_msa, self.self_attn(input_x, freqs, drop_out=drop_out, training_mode=training_mode))
+        x = x + self.cross_attn(self.norm3(x), context)
         input_x = modulate(self.norm2(x), shift_mlp, scale_mlp)
         x = self.gate(x, gate_mlp, self.ffn(input_x))
         return x
@@ -498,7 +424,6 @@ class Head(nn.Module):
             shift, scale = (self.modulation.unsqueeze(0).to(dtype=t_mod.dtype, device=t_mod.device) + t_mod.unsqueeze(2)).chunk(2, dim=2)
             x = (self.head(self.norm(x) * (1 + scale.squeeze(2)) + shift.squeeze(2)))
         else:
-            # 这边也改
             b = t_mod.shape[0]
             shift, scale = (self.modulation.to(dtype=t_mod.dtype, device=t_mod.device).repeat(b, 1, 1) + t_mod[:,None]).chunk(2, dim=1)
             x = (self.head(self.norm(x) * (1 + scale) + shift))
@@ -955,12 +880,3 @@ class WanModelStateDictConverter:
             config = {}
         return state_dict, config
 
-# dit debug
-# if __name__ == "__main__":
-#     dit = DiTBlock(has_image_input=False, dim=1536, num_heads=12, ffn_dim=8960, eps=1e-6)
-#     x = torch.randn(1, 1536, 16, 16, 16)
-#     context = torch.randn(1, 1536, 16, 16, 16)
-#     t_mod = torch.randn(1, 6, 1536)
-#     freqs = torch.randn(1536, 1, 16)
-#     x = dit(x, context, t_mod, freqs)
-#     print(x.shape)
