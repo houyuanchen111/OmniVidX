@@ -1,24 +1,12 @@
-"""
-改成any2any的
-R：RGB (composite image)
-P：Pha (alpha/matte)
-F：Foreground
-B：Background
-""" 
-import torchvision
-from numpy import vdot
 import torch, types, copy,json,random
 from typing import Optional, Union
 from einops import reduce
 from tqdm import tqdm
-import torch.nn as nn
-import torch.nn.functional as F
 from safetensors.torch import load_file
 from ..trainers.util import DiffusionTrainingModule
 from .util import BasePipeline, PipelineUnit, PipelineUnitRunner, ModelConfig, TeaCache, TemporalTiler_BCTHW
 from ..models import ModelManager, load_state_dict
-# from ..models.wan_video_dit_albedo_depth_material_normal_wonder3d_v0 import WanModel, RMSNorm, sinusoidal_embedding_1d
-from ..models.wan_video_dit_matte_v9 import WanModel, RMSNorm, sinusoidal_embedding_1d
+from ..models.wan_video_dit_alpha import WanModel, RMSNorm, sinusoidal_embedding_1d
 from ..models.wan_video_text_encoder import WanTextEncoder, T5RelativeEmbedding, T5LayerNorm
 from ..models.wan_video_vae import WanVideoVAE, RMS_norm, CausalConv3d, Upsample 
 from ..models.wan_video_image_encoder import WanImageEncoder
@@ -31,12 +19,10 @@ from ..lora import GeneralLoRALoader
 from PIL import Image
 
 class WanVideoPipeline(BasePipeline):
-
     def __init__(self, 
                  device="cuda", 
                  torch_dtype=torch.bfloat16, 
                  tokenizer_path=None,
-                #  unit_names: list[str] = None
                  ):
         super().__init__(
             device=device, torch_dtype=torch_dtype,
@@ -52,15 +38,11 @@ class WanVideoPipeline(BasePipeline):
         self.vace: VaceWanModel = None # type: ignore
         self.in_iteration_models = ("dit", "motion_controller", "vace")
         self.unit_runner = PipelineUnitRunner()
-        #改回硬编码，发现pipe的代码还是必须要改动的
-        self.units = [ # 硬编码
+        self.units = [ 
             WanVideoUnit_ShapeChecker(),
-            # WanVideoUnit_Modality_Embedder(),
             WanVideoUnit_NoiseInitializer(),
             WanVideoUnit_InputVideoEmbedder(),
             WanVideoUnit_PromptEmbedder(),
-            # WanVideoUnit_ControlVideoEmbedder(),
-            # WanVideoUnit_ClipFeatureEmbedder(),
         ]
        
         self.model_fn = model_fn_wan_video
@@ -72,11 +54,9 @@ class WanVideoPipeline(BasePipeline):
         loader.load(module, lora, alpha=alpha)
 
     def training_loss(self, **inputs):
-        timestep_id = torch.randint(0, self.scheduler.num_train_timesteps, (1,)) # 越大越不加噪
-        timestep_weight = self.scheduler.timesteps[timestep_id].to(dtype=self.torch_dtype, device=self.device) # 越小越不加噪
-
+        timestep_id = torch.randint(0, self.scheduler.num_train_timesteps, (1,)) 
+        timestep_weight = self.scheduler.timesteps[timestep_id].to(dtype=self.torch_dtype, device=self.device) 
         training_mode = inputs["training_mode"]
-        # Matte任务的四个分支: [rgb, pha, fgr, bgr]
         if training_mode == "t2RPFB":
             timestep = [
                 timestep_weight,
@@ -186,9 +166,8 @@ class WanVideoPipeline(BasePipeline):
         training_target = self.scheduler.training_target(inputs["input_latents"], inputs["noise"], timestep)
 
         noise_pred = self.model_fn(**inputs, timestep=timestep) # model_fn are used to predict noise
-        # 针对不同训练模式计算loss
+
         if training_mode == "t2RPFB":
-            # 四个分支全部参与loss计算
             loss = torch.nn.functional.mse_loss(noise_pred.float(), training_target.float())
         elif training_mode == "R2PFB":
             loss = torch.nn.functional.mse_loss(noise_pred.float()[1:], training_target.float()[1:])
@@ -369,68 +348,6 @@ class WanVideoPipeline(BasePipeline):
         )
         torch.cuda.set_device(dist.get_rank())
             
-    def get_modality_data(self, data: dict, modality_name: Optional[str] = None):
-        """
-        获取模态数据，支持多种模态类型
-        
-        Args:
-            data: 包含各种模态数据的字典
-            
-        Returns:
-            包含模态索引、输入视频和对应模态数据的字典
-        """
-        # 定义支持的模态类型和对应的键名
-        MODALITY_MAPPING = {
-            0: "albedo",
-            1: "basecolor", 
-            2: "depth",
-            3: "material",
-            4: "normal"
-        }
-        
-        # 如果指定了模态名称，仅返回该模态
-        if modality_name is not None:
-            if modality_name not in MODALITY_MAPPING.values():
-                raise ValueError(f"不支持的模态名称: {modality_name}. 支持: {list(MODALITY_MAPPING.values())}")
-            if data.get(modality_name) is None:
-                raise ValueError(f"输入数据中不存在模态: {modality_name}")
-            modality_key = modality_name
-            # 反查索引
-            modality_index = [idx for idx, name in MODALITY_MAPPING.items() if name == modality_key][0]
-        else:
-            # 获取可用的模态类型
-            available_modalities = []
-            for idx, key in MODALITY_MAPPING.items():
-                if data.get(key) is not None:
-                    available_modalities.append(idx)
-            
-            if not available_modalities:
-                raise ValueError("没有找到任何可用的模态数据")
-            
-            # 随机选择模态索引
-            modality_index = random.choice(available_modalities)
-            modality_key = MODALITY_MAPPING[modality_index]
-        
-        # 获取模态数据
-        modality_data = data[modality_key]
-        
-        # 构建返回字典
-        return_dict = {
-            "modality_index": modality_index,
-            "input_videos": [modality_data],
-            modality_key: [modality_data]
-        }
-        
-        # 统一进行设备转换
-        for key in ["input_videos", modality_key]:
-            if key in return_dict and return_dict[key] is not None:
-                return_dict[key] = [
-                    tensor.to(self.device).to(self.torch_dtype) 
-                    for tensor in return_dict[key]
-                ]
-        
-        return return_dict
-
     def enable_usp(self):
         from xfuser.core.distributed import get_sequence_parallel_world_size
         from ..distributed.xdit_context_parallel import usp_attn_forward, usp_dit_forward
@@ -441,23 +358,6 @@ class WanVideoPipeline(BasePipeline):
         self.sp_size = get_sequence_parallel_world_size()
         self.use_unified_sequence_parallel = True
 
-    def vae_normal_output_to_image(self, vae_output, pattern="B C H W", min_value=-1, max_value=1):
-        # Transform a torch.Tensor to PIL.Image
-        if pattern != "H W C":
-            vae_output = reduce(vae_output, f"{pattern} -> H W C", reduction="mean") # H W C
-        normal_unit = vae_output / (torch.norm(vae_output, dim=-1, keepdim=True) + 1e-6) # [-1,1] unit
-        return normal_unit.permute(2,0,1) # C H W
-
-    def vae_normal_output_to_video(self, vae_output, pattern="B C T H W", min_value=-1, max_value=1):
-        # Transform a torch.Tensor to list of PIL.Image
-        if pattern != "T H W C":
-            vae_output = reduce(vae_output, f"{pattern} -> T H W C", reduction="mean")
-        video_normal_unit = []
-        for image in vae_output:
-            normal_unit= self.vae_normal_output_to_image(image, pattern="H W C", min_value=min_value, max_value=max_value)
-            video_normal_unit.append(normal_unit)
-        return torch.stack(video_normal_unit, dim=1)
-    
     def vae_output_to_image(self, vae_output, pattern="B C H W", min_value=-1, max_value=1):
         # Transform a torch.Tensor to PIL.Image
         if pattern != "H W C":
@@ -473,52 +373,6 @@ class WanVideoPipeline(BasePipeline):
             video_output.append(image)
         return torch.stack(video_output, dim=1) # C T H W
 
-    def robust_min_max_normalize(self,
-        tensor: torch.Tensor, 
-        quantiles: tuple[float, float] = (0.001, 0.99), 
-        per_channel: bool = False, 
-        eps: float = 1e-6
-    ) -> torch.Tensor:
-        """
-        Args:
-            tensor: [H, W, 3]
-            quantiles: (0.001, 0.99)
-            per_channel: True
-            eps: 1e-6
-        Returns:
-            [H, W, 3]
-        """
-        assert tensor.ndim == 3 and tensor.shape[2] == 3, f"输入张量形状应为 [H, W, 3]，但得到 {tensor.shape}"
-        tensor_cache = tensor.clone()
-        tensor = tensor.to(torch.float32)
-        if per_channel:
-            tensor_flat = tensor.permute(2, 0, 1).flatten(start_dim=1)
-            min_vals = torch.nanquantile(tensor_flat, quantiles[0], dim=1)
-            max_vals = torch.nanquantile(tensor_flat, quantiles[1], dim=1)
-            min_vals = min_vals.view(1, 1, 3)
-            max_vals = max_vals.view(1, 1, 3)
-
-        else:
-            min_vals = torch.nanquantile(tensor, quantiles[0])
-            max_vals = torch.nanquantile(tensor, quantiles[1])
-        denominator = max_vals - min_vals
-        denominator = torch.where(denominator < eps, torch.tensor(eps, device=tensor.device), denominator)
-        normalized_tensor = (tensor - min_vals) / denominator
-        normalized_tensor = torch.clamp(normalized_tensor, 0, 1)
-        normalized_tensor = normalized_tensor.to(tensor_cache.dtype)
-        return normalized_tensor 
-    
-    def vae_disparity_output_to_video(self, vae_output, pattern="B C T H W"):
-        # 这个处理不知道合不合理，mask先不加
-        if pattern != "T H W C":
-            vae_output = reduce(vae_output, f"{pattern} -> T H W C", reduction="mean")
-        assert vae_output.min() >= -1 and vae_output.max() <= 1, "disparity is not in [-1,1]"
-        for i in range(vae_output.shape[0]):
-            image = vae_output[i] # H W C
-            image = self.robust_min_max_normalize(image)
-            vae_output[i] = image * 2 - 1  # 这个是为了算loss的
-        return vae_output.permute(3,0,1,2) # C T H W
-    
     @staticmethod
     def from_pretrained(
         torch_dtype: torch.dtype = torch.bfloat16,
@@ -530,7 +384,6 @@ class WanVideoPipeline(BasePipeline):
         redirect_common_files: bool = True,
         use_usp=False,
     ):
-        # Redirect model path, 调用以实现pipe的实例化
         if redirect_common_files:
             redirect_dict = {
                 "models_t5_umt5-xxl-enc-bf16.pth": "Wan-AI/Wan2.1-T2V-1.3B",
@@ -561,8 +414,8 @@ class WanVideoPipeline(BasePipeline):
         # Load models
         pipe.text_encoder = model_manager.fetch_model("wan_video_text_encoder") # type: ignore
         # pipe.dit = model_manager.fetch_model("wan_video_dit") # type: ignore
-        # 现在不需要加模块
-        #从 JSON 读取 WanModel 配置并实例化，然后加载 safetensors 权重
+        # No need to add modules for now
+        # Read WanModel config from JSON, instantiate it, and then load safetensors weights
         config_path = "configs/wan2_1_14b_t2v_dit_config.json"
         with open(config_path, "r") as f:
             dit_kwargs = json.load(f)
@@ -599,43 +452,18 @@ class WanVideoPipeline(BasePipeline):
         if use_usp: pipe.enable_usp()
         return pipe
 
-    def normalize_tensor_by_time_to_neg1_pos1(self,tensor):
-        """
-        按T维度循环归一化到[-1,1]范围
-        """
-        C, T, H, W = tensor.shape
-        normalized_tensors = []
-        
-        for t in range(T):
-            frame = tensor[:, t, :, :]
-            min_val = frame.min()
-            max_val = frame.max()
-            
-            if max_val > min_val:
-                # 先归一化到[0,1]，再转换到[-1,1]
-                normalized_frame = (frame - min_val) / (max_val - min_val)
-                normalized_frame = normalized_frame * 2.0 - 1.0
-            else:
-                normalized_frame = torch.zeros_like(frame)
-            
-            normalized_tensors.append(normalized_frame)
-        
-        return torch.stack(normalized_tensors, dim=1)
-
-    
-    
 
     @torch.no_grad()
     def __call__(
         self,
         **kwargs 
     ):
-        # 只有inference的时候才会调用__call__()
+
         inputs_shared = kwargs.copy()
         num_inference_steps = inputs_shared.pop("num_inference_steps", 50)
         denoising_strength = inputs_shared.get("denoising_strength", 1.0)
         sigma_shift = inputs_shared.get("sigma_shift", 5.0)
-        prompt = inputs_shared.pop("prompt", "") # 这个需要pop，避免重复输入
+        prompt = inputs_shared.pop("prompt", "") 
         tea_cache_l1_thresh = inputs_shared.pop("tea_cache_l1_thresh", None)
         tea_cache_model_id = inputs_shared.pop("tea_cache_model_id", "")
         negative_prompt = inputs_shared.pop("negative_prompt", "")
@@ -669,7 +497,6 @@ class WanVideoPipeline(BasePipeline):
 
         B, C, T, H, W = inputs_shared["latents"].shape
         noise_0 = inputs_shared["latents"][[0]]
-        # Matte任务的推理初始化: [rgb, pha, fgr, bgr]
         if training_mode == "R2PFB":
             inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "P2RFB":
@@ -715,7 +542,6 @@ class WanVideoPipeline(BasePipeline):
        
         for progress_id, timestep in enumerate(tqdm(scheduler_copy.timesteps)):
             timestep = timestep.unsqueeze(0).to(dtype=self.torch_dtype, device=self.device)
-            # Matte任务的推理timestep设置: [rgb, pha, fgr, bgr]
             if training_mode == "t2RPFB":
                 timestep = [
                     timestep,
@@ -826,12 +652,12 @@ class WanVideoPipeline(BasePipeline):
                 if cfg_merge:
                     noise_pred_posi, noise_pred_nega = noise_pred_posi.chunk(2, dim=0)
                 else:
-                    noise_pred_nega = self.model_fn(**models, **inputs_shared, **inputs_nega, timestep=timestep) # nega prompt的噪声
-                noise_pred = noise_pred_nega + cfg_scale * (noise_pred_posi - noise_pred_nega) # cfg生效的核心代码
+                    noise_pred_nega = self.model_fn(**models, **inputs_shared, **inputs_nega, timestep=timestep) # noise predicted with negative prompt
+                noise_pred = noise_pred_nega + cfg_scale * (noise_pred_posi - noise_pred_nega) # core code where CFG takes effect
             else:
                 noise_pred = noise_pred_posi
 
-            # Scheduler - Matte任务的latents更新
+            # Scheduler
             if training_mode == "t2RPFB":
                 inputs_shared["latents"] = scheduler_copy.step(noise_pred, scheduler_copy.timesteps[progress_id], inputs_shared["latents"])
             elif training_mode == "R2PFB":
@@ -869,7 +695,7 @@ class WanVideoPipeline(BasePipeline):
         if vace_reference_image is not None:
             inputs_shared["latents"] = inputs_shared["latents"][:, :, 1:]
 
-        # Decode - Matte任务的解码: [rgb, pha, fgr, bgr]
+        # Decode
         self.load_models_to_device(['vae'])
         video_dict = {}
 
@@ -993,9 +819,6 @@ class WanVideoUnit_ShapeChecker(PipelineUnit):
         super().__init__(input_params=("height", "width", "num_frames"))
 
     def process(self, pipe: WanVideoPipeline, height, width, num_frames):
-        """
-        本质上是支持了batch输入
-        """
         if isinstance(height, torch.Tensor):
             height = height[0].item()
         if isinstance(width, torch.Tensor):
@@ -1014,12 +837,11 @@ class WanVideoUnit_NoiseInitializer(PipelineUnit):
         super().__init__(input_params=("height", "width", "num_frames", "seed", "rand_device"))
 
     def process(self, pipe: WanVideoPipeline, height, width, num_frames, seed, rand_device):
-        length = (num_frames - 1) // 4 + 1 # 改成普通的noise就行
-        noise = pipe.generate_noise((4, 16, length, height//8, width//8), seed=seed, rand_device=rand_device) # 三种模态的noise应该不一样
+        length = (num_frames - 1) // 4 + 1 
+        noise = pipe.generate_noise((4, 16, length, height//8, width//8), seed=seed, rand_device=rand_device) # The noise of the three modalities should be different
         return {"noise": noise}
 
 class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
-    # Matte任务的输入编码: [rgb, pha, fgr, bgr]
     def __init__(self):
         super().__init__(
             input_params=("input_videos", "noise", "tiled", "tile_size", "tile_stride", "is_inference", "modality_index", "inference_rgb", "inference_pha", "inference_fgr", "inference_bgr", "height", "width", "training_mode"),
@@ -1028,13 +850,11 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
     def process(self, pipe: WanVideoPipeline, input_videos, noise, tiled, tile_size, tile_stride, is_inference, modality_index, inference_rgb, inference_pha, inference_fgr, inference_bgr, height, width, training_mode):
         if is_inference:
             pipe.load_models_to_device(["vae"])
-            result = {"latents": noise, "drop_out": 0}  # 推理时不使用dropout
+            result = {"latents": noise, "drop_out": 0}  
 
-            # t2RPFB: Text to RGB, Pha, Foreground, Background - 不需要条件输入
             if training_mode == "t2RPFB":
                 return result
 
-            # R2PFB: RGB to Pha, Foreground, Background - 需要 RGB 条件
             elif training_mode == "R2PFB":
                 if inference_rgb is not None:
                     if isinstance(inference_rgb, Image.Image):
@@ -1045,7 +865,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     result["inference_rgb_latents"] = inference_rgb_latents
                 return result
 
-            # P2RFB: Pha to RGB, Foreground, Background - 需要 Pha 条件
             elif training_mode == "P2RFB":
                 if inference_pha is not None:
                     if isinstance(inference_pha, Image.Image):
@@ -1056,7 +875,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     result["inference_pha_latents"] = inference_pha_latents
                 return result
 
-            # F2RPB: Foreground to RGB, Pha, Background - 需要 Foreground 条件
             elif training_mode == "F2RPB":
                 if inference_fgr is not None:
                     if isinstance(inference_fgr, Image.Image):
@@ -1067,7 +885,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     result["inference_fgr_latents"] = inference_fgr_latents
                 return result
 
-            # B2RPF: Background to RGB, Pha, Foreground - 需要 Background 条件
             elif training_mode == "B2RPF":
                 if inference_bgr is not None:
                     if isinstance(inference_bgr, Image.Image):
@@ -1078,7 +895,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     result["inference_bgr_latents"] = inference_bgr_latents
                 return result
 
-            # RP2FB: RGB, Pha to Foreground, Background - 需要 RGB 和 Pha 条件
             elif training_mode == "RP2FB":
                 if inference_rgb is not None:
                     if isinstance(inference_rgb, Image.Image):
@@ -1097,7 +913,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     result["inference_pha_latents"] = inference_pha_latents
                 return result
 
-            # RF2PB: RGB, Foreground to Pha, Background - 需要 RGB 和 Foreground 条件
             elif training_mode == "RF2PB":
                 if inference_rgb is not None:
                     if isinstance(inference_rgb, Image.Image):
@@ -1116,7 +931,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     result["inference_fgr_latents"] = inference_fgr_latents
                 return result
 
-            # RB2PF: RGB, Background to Pha, Foreground - 需要 RGB 和 Background 条件
             elif training_mode == "RB2PF":
                 if inference_rgb is not None:
                     if isinstance(inference_rgb, Image.Image):
@@ -1135,7 +949,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     result["inference_bgr_latents"] = inference_bgr_latents
                 return result
 
-            # PF2RB: Pha, Foreground to RGB, Background - 需要 Pha 和 Foreground 条件
             elif training_mode == "PF2RB":
                 if inference_pha is not None:
                     if isinstance(inference_pha, Image.Image):
@@ -1154,7 +967,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     result["inference_fgr_latents"] = inference_fgr_latents
                 return result
 
-            # PB2RF: Pha, Background to RGB, Foreground - 需要 Pha 和 Background 条件
             elif training_mode == "PB2RF":
                 if inference_pha is not None:
                     if isinstance(inference_pha, Image.Image):
@@ -1173,7 +985,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     result["inference_bgr_latents"] = inference_bgr_latents
                 return result
 
-            # FB2RP: Foreground, Background to RGB, Pha - 需要 Foreground 和 Background 条件
             elif training_mode == "FB2RP":
                 if inference_fgr is not None:
                     if isinstance(inference_fgr, Image.Image):
@@ -1192,7 +1003,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     result["inference_bgr_latents"] = inference_bgr_latents
                 return result
 
-            # PFB2R: Pha, Foreground, Background to RGB - 需要 Pha、Foreground 和 Background 条件
             elif training_mode == "PFB2R":
                 if inference_pha is not None:
                     if isinstance(inference_pha, Image.Image):
@@ -1219,7 +1029,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     result["inference_bgr_latents"] = inference_bgr_latents
                 return result
 
-            # RFB2P: RGB, Foreground, Background to Pha - 需要 RGB、Foreground 和 Background 条件
             elif training_mode == "RFB2P":
                 if inference_rgb is not None:
                     if isinstance(inference_rgb, Image.Image):
@@ -1246,7 +1055,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     result["inference_bgr_latents"] = inference_bgr_latents
                 return result
 
-            # RPB2F: RGB, Pha, Background to Foreground - 需要 RGB、Pha 和 Background 条件
             elif training_mode == "RPB2F":
                 if inference_rgb is not None:
                     if isinstance(inference_rgb, Image.Image):
@@ -1273,7 +1081,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     result["inference_bgr_latents"] = inference_bgr_latents
                 return result
 
-            # RPF2B: RGB, Pha, Foreground to Background - 需要 RGB、Pha 和 Foreground 条件
             elif training_mode == "RPF2B":
                 if inference_rgb is not None:
                     if isinstance(inference_rgb, Image.Image):
@@ -1308,10 +1115,10 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
         input_latents = pipe.vae.encode(video, device=pipe.device, tiled=tiled, tile_size=tile_size, tile_stride=tile_stride).to(dtype=pipe.torch_dtype, device=pipe.device)
         assert input_latents.shape[1] == noise.shape[1], "input_latents.shape[1] != noise.shape[1]"
         if pipe.scheduler.training:
-            return {"latents": noise, "input_latents": input_latents, "drop_out": 0.25}  # 训练时使用dropout
+            return {"latents": noise, "input_latents": input_latents, "drop_out": 0} 
         else:
             latents = pipe.scheduler.add_noise(input_latents, noise, timestep=pipe.scheduler.timesteps[0])
-            return {"latents": latents, "drop_out": 0}  # 推理时不使用dropout
+            return {"latents": latents, "drop_out": 0} 
 
 class WanVideoUnit_PromptEmbedder(PipelineUnit):
     def __init__(self):
@@ -1325,7 +1132,7 @@ class WanVideoUnit_PromptEmbedder(PipelineUnit):
     def process(self, pipe: WanVideoPipeline, prompt, positive) -> dict:
         pipe.load_models_to_device(self.onload_model_names)
         prompt_emb = pipe.prompter.encode_prompt(prompt, positive=positive, device=str(pipe.device)) 
-        return {"context": prompt_emb} # 我觉得这个可以预处理保存成pth
+        return {"context": prompt_emb}
         
 def model_fn_wan_video(
     dit: WanModel,
@@ -1349,7 +1156,7 @@ def model_fn_wan_video(
     use_gradient_checkpointing_offload: bool = False,
     control_camera_latents_input = None, # type: ignore
     training_mode: str = None,
-    drop_out: float = 0.25,  # 默认训练模式，使用dropout
+    drop_out: float = 0,  
     **kwargs,
 ):
     if sliding_window_size is not None and sliding_window_stride is not None:
@@ -1391,37 +1198,23 @@ def model_fn_wan_video(
                                             get_sp_group)
     
     t = torch.cat([dit.time_embedding(sinusoidal_embedding_1d(dit.freq_dim, timestep[i])) for i in range(len(timestep))], dim=0) # 4 1536(d)
-    t_mod = dit.time_projection(t).unflatten(1, (6, dit.dim)) # 为了DiT的AdaLN, 所以分成六份: 1 6 1536
+    t_mod = dit.time_projection(t).unflatten(1, (6, dit.dim)) 
     if motion_bucket_id is not None and motion_controller is not None:
         t_mod = t_mod + motion_controller(motion_bucket_id).unflatten(1, (6, dit.dim))
-    context = dit.text_embedding(context) # mlp -> silu -> mlp # b l c； c 的维度要和dit的channel对上，L没关系
+    context = dit.text_embedding(context) 
 
     x = latents # noise
     B = x.shape[0]
-    # Merged cfg
     if x.shape[0] != context.shape[0]:
         x = torch.concat([x] * context.shape[0], dim=0)
-    # if timestep.shape[0] != context.shape[0]:
-    #     timestep = torch.concat([timestep] * context.shape[0], dim=0)
 
-
-    if dit.has_image_input: # y 是 ctrl video latent 
-        x = torch.cat([x, y], dim=1)  # (b, c_x + c_y, f, h, w) # cat在channel维度 # type: ignore
+    if dit.has_image_input: 
+        x = torch.cat([x, y], dim=1)  # (b, c_x + c_y, f, h, w) 
         clip_embdding = dit.img_emb(clip_feature).repeat(B, 1, 1)
-        context = torch.cat([clip_embdding, context], dim=1) # 检查原来的有没有
+        context = torch.cat([clip_embdding, context], dim=1) 
 
     x, (f, h, w) = dit.patchify(x, control_camera_latents_input) # type: ignore
 
-    # 为不同模态（albedo，depth，material，normal）添加可学习的 domain embedding
-    # x: (B, L, C)
-    # B = x.shape[0]
-    # if B % 4 == 0 and hasattr(dit, "domain_embedding"):
-    #     domain_ids = torch.zeros(B, dtype=torch.long, device=x.device)
-    #     domain_ids[B // 4:B // 2] = 1        # 第二个1/4批次设为1
-    #     domain_ids[B // 2:B // 4 * 3] = 2    # 第三个1/4批次设为2  
-    #     domain_ids[B // 4 * 3:] = 3  
-    #     de = dit.domain_embedding(domain_ids)  # (B, C)
-    #     x = x + de.unsqueeze(1)  # 广播到序列长度维度
 
     
     # Reference image 
@@ -1429,14 +1222,14 @@ def model_fn_wan_video(
         if len(reference_latents.shape) == 5:
             reference_latents = reference_latents[:, :, 0]
         reference_latents = dit.ref_conv(reference_latents).flatten(2).transpose(1, 2)
-        x = torch.concat([reference_latents, x], dim=1) # cat 在L维度
+        x = torch.concat([reference_latents, x], dim=1)
         f += 1
     
     freqs = torch.cat([
         dit.freqs[0][:f].view(f, 1, 1, -1).expand(f, h, w, -1),
         dit.freqs[1][:h].view(1, h, 1, -1).expand(f, h, w, -1),
         dit.freqs[2][:w].view(1, 1, w, -1).expand(f, h, w, -1)
-    ], dim=-1).reshape(f * h * w, 1, -1).to(x.device) # 3d rope, 记录帧间时序
+    ], dim=-1).reshape(f * h * w, 1, -1).to(x.device)
     
     # TeaCache
     if tea_cache is not None:
@@ -1494,13 +1287,13 @@ def model_fn_wan_video(
     x = dit.unpatchify(x, (f, h, w)) # type: ignore just a rearrangement
     return x
 
-class WanTrainingModule_wan2_1_14b_t2v_matte_lora_train_v9(DiffusionTrainingModule): 
+class OmniVidAlpha(DiffusionTrainingModule): 
     def __init__(
         self,
         model_paths=None, model_id_with_origin_paths=None,
         trainable_models=None,
         lora_base_model=None, lora_target_modules="q,k,v,o,ffn.0,ffn.2", lora_rank=32, lora_modalities:list[str]=None,
-        use_gradient_checkpointing=True, # 默认false好，xiuyu的经验 # 还是改成true吧，不然训不下
+        use_gradient_checkpointing=True, 
         use_gradient_checkpointing_offload=False,
         extra_inputs=None,
         resume_from_checkpoint: Optional[str] = None,
@@ -1519,13 +1312,12 @@ class WanTrainingModule_wan2_1_14b_t2v_matte_lora_train_v9(DiffusionTrainingModu
             model_id_with_origin_paths = model_id_with_origin_paths.split(",")
             model_configs += [ModelConfig(model_id=i.split(":")[0], origin_file_pattern=i.split(":")[1]) for i in model_id_with_origin_paths]
         tokenizer_config = ModelConfig(path="checkpoints/Wan2.1-T2V-1.3B/google/umt5-xxl")
-        # 检测可用的设备
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
-
-        print(f"使用设备: {device}")
+        
+        print(f"Using device: {device}")
         self.torch_dtype = torch.bfloat16
-        self.pipe = WanVideoPipeline.from_pretrained(torch_dtype=torch.bfloat16, device=device, tokenizer_config=tokenizer_config, model_configs=model_configs,redirect_common_files=False) # 加载预训练权重
+        self.pipe = WanVideoPipeline.from_pretrained(torch_dtype=torch.bfloat16, device=device, tokenizer_config=tokenizer_config, model_configs=model_configs,redirect_common_files=False) # Load pretrained weights
 
         if lora_modalities is not None:
             lora_configs = []
@@ -1542,7 +1334,6 @@ class WanTrainingModule_wan2_1_14b_t2v_matte_lora_train_v9(DiffusionTrainingModu
 
 
         if lora_modalities is None:
-            # 先加lora的结构，方便resume; 加了lora是默认放开梯度的
             if lora_base_model is not None:
                 model = self.add_lora_to_model(
                     getattr(self.pipe, lora_base_model), 
@@ -1550,11 +1341,10 @@ class WanTrainingModule_wan2_1_14b_t2v_matte_lora_train_v9(DiffusionTrainingModu
                     lora_rank=lora_rank
                 )
                 setattr(self.pipe, lora_base_model, model)
-                print(f"[LoRA] 已添加到模型: {lora_base_model}")
+                print(f"[LoRA] has been added to: {lora_base_model}")
         
-        # 检查LoRA有没有成功加上
+
         if lora_base_model is not None:
-            print(f"\n[LoRA] 检查LoRA是否成功添加:")
             hit_names = []
             for name, module in self.pipe.dit.named_modules():
                 if any(x in name for x in lora_target_modules.split(",")):
@@ -1562,169 +1352,47 @@ class WanTrainingModule_wan2_1_14b_t2v_matte_lora_train_v9(DiffusionTrainingModu
                     has_lora_param = any("lora" in pname.lower() for pname, _ in module.named_parameters(recurse=True))
                     if has_lora or has_lora_param:
                         hit_names.append(name)
-            print(f"[LoRA] 命中的线性层数量: {len(hit_names)}") # num_blocks * layer_num
-        # multi-lora 权重的加载没有问题了
-        if albedo_resume_from_checkpoint is not None:
-            state_dict = load_file(albedo_resume_from_checkpoint) # safetensors 不需要map_location
-            prefix = "dit." # 去掉不想要的前缀
-            state_dict = {k[len(prefix):] if k.startswith(prefix) else k: v for k, v in state_dict.items()}
-            state_dict = {k.replace("default", "albedo"): v for k, v in state_dict.items()} # 重命名
-            try:
-                missing_keys, unexpected_keys = self.pipe.dit.load_state_dict(state_dict, strict=False)
-                assert unexpected_keys == [], "unexpected_keys not empty"
-            except Exception as e:
-                print(f"从checkpoint {albedo_resume_from_checkpoint} 恢复训练失败: {e}")
-            if missing_keys:
-                print(f"⚠️ 缺失键: {len(missing_keys)} 个")
-                # 显示前几个缺失键作为示例
-                for key in list(missing_keys)[:5]:
-                    print(f"  - {key}")
-                    #-------start------#
-        if material_resume_from_checkpoint is not None:
-            state_dict = load_file(material_resume_from_checkpoint) # safetensors 不需要map_location
-            prefix = "dit." # 去掉不想要的前缀
-            state_dict = {k[len(prefix):] if k.startswith(prefix) else k: v for k, v in state_dict.items()}
-            state_dict = {k.replace("default", "material"): v for k, v in state_dict.items()} # 重命名
-            try:
-                missing_keys, unexpected_keys = self.pipe.dit.load_state_dict(state_dict, strict=False)
-                assert unexpected_keys == [], "unexpected_keys not empty"
-            except Exception as e:
-                print(f"从checkpoint {material_resume_from_checkpoint} 恢复训练失败: {e}")
-            if missing_keys:
-                print(f"⚠️ 缺失键: {len(missing_keys)} 个")
-                # 显示前几个缺失键作为示例
-                for key in list(missing_keys)[:5]:
-                    print(f"  - {key}")
-                    #-------start------#
-        if normal_resume_from_checkpoint is not None:
-            state_dict = load_file(normal_resume_from_checkpoint) # safetensors 不需要map_location
-            prefix = "dit." # 去掉不想要的前缀
-            state_dict = {k[len(prefix):] if k.startswith(prefix) else k: v for k, v in state_dict.items()}
-            state_dict = {k.replace("default", "normal"): v for k, v in state_dict.items()} # 重命名
-            try:
-                missing_keys, unexpected_keys = self.pipe.dit.load_state_dict(state_dict, strict=False)
-                assert unexpected_keys == [], "unexpected_keys not empty"
-            except Exception as e:
-                print(f"从checkpoint {normal_resume_from_checkpoint} 恢复训练失败: {e}")
-            if missing_keys:
-                print(f"⚠️ 缺失键: {len(missing_keys)} 个")
-                # 显示前几个缺失键作为示例
-                for key in list(missing_keys)[:5]:
-                    print(f"  - {key}")
-                    #-------start------#
+
         if resume_from_checkpoint is not None:
-            state_dict = load_file(resume_from_checkpoint) # safetensors 不需要map_location
-            prefix = "dit." # 去掉不想要的前缀
+            state_dict = load_file(resume_from_checkpoint) 
+            prefix = "dit."
             state_dict = {k[len(prefix):] if k.startswith(prefix) else k: v for k, v in state_dict.items()}
             try:
                 missing_keys, unexpected_keys = self.pipe.dit.load_state_dict(state_dict, strict=False)
                 assert unexpected_keys == [], "unexpected_keys not empty"
             except Exception as e:
-                print(f"从checkpoint {resume_from_checkpoint} 恢复训练失败: {e}")
+                print(f"Failed to resume training from checkpoint {resume_from_checkpoint}: {e}")
             if missing_keys:
-                print(f"⚠️ 缺失键: {len(missing_keys)} 个")
-                # 显示前几个缺失键作为示例
+                print(f"⚠️ missing keys: {len(missing_keys)} ")
                 for key in list(missing_keys)[:5]:
                     print(f"  - {key}")
-                    #-------start------#
 
 
-        self.pipe.units = [ # 一定要加()，这样才实例化
+
+        self.pipe.units = [ 
             WanVideoUnit_ShapeChecker(),
-            # WanVideoUnit_Modality_Embedder(),
             WanVideoUnit_NoiseInitializer(),
             WanVideoUnit_InputVideoEmbedder(),
             WanVideoUnit_PromptEmbedder(),
-            # WanVideoUnit_ControlVideoEmbedder(),
-            # WanVideoUnit_ClipFeatureEmbedder(),
         ]
 
         self.pipe.scheduler.set_timesteps(1000, training=True)
-        
-        # Freeze all models first
         self.pipe.freeze_except([] if trainable_models is None else trainable_models.split(","))
-        
-        # 2. 放开LoRA相关模块的梯度
+
         if lora_base_model is not None:
-            print("\n放开LoRA相关模块训练:")
             lora_trainable_params = 0
-            processed_lora_modules = set()  # 避免重复计算
+            processed_lora_modules = set()  
             for name, param in self.pipe.dit.named_parameters():
-                if "lora" in name.lower(): # 不放开rgb的LoRA,让其保证只使用原因模型的权重
+                if "lora" in name.lower(): 
                     param.requires_grad = True
                     lora_trainable_params += param.numel()
-                    module_name = name.rsplit('.', 2)[0]  # 去掉 .default.weight
+                    module_name = name.rsplit('.', 2)[0] 
                     if module_name not in processed_lora_modules:
                         processed_lora_modules.add(module_name)
                         print(f"Trainable LoRA: {module_name} ({param.numel() /1024/1024:.2f} MB)")
             
-            print(f"LoRA总可训练参数: {lora_trainable_params /1024/1024:.2f} MB")
+            print(f"LoRA trainable params: {lora_trainable_params /1024/1024:.2f} MB")
 
-        # 3. 再放开其余模块
-        print("\n放开特定组件训练:")
-        total_params = 0
-        trainable_modules = []
-        trainable_params = 0
-        for name, module in self.pipe.dit.named_modules():
-            # 放开 DiTBlock 中的 projector
-            if "projector" in name:
-                module_params = 0
-                for param in module.parameters():
-                    param.requires_grad = True
-                    module_params += param.numel()
-                    trainable_params += param.numel()
-                trainable_modules.append((name, module_params))
-                print(f"Trainable: {name} ({module_params /1024/1024:.2f} MB)")
-            
-            # 放开 DiTBlock 中的 patch_align_cross_modality_attn和对应的norm
-            if "patch_align_cross_modality_attn" in name:
-                module_params = 0
-                for param in module.parameters():
-                    param.requires_grad = True
-                    module_params += param.numel()
-                    trainable_params += param.numel()
-                trainable_modules.append((name, module_params))
-                print(f"Trainable: {name} ({module_params /1024/1024:.2f} MB)")
-                    
-        # 放开 WanModel 中的 domain_embedding
-        if hasattr(self.pipe.dit, 'domain_embedding'):
-            module_params = 0
-            for param in self.pipe.dit.domain_embedding.parameters():
-                param.requires_grad = True
-                module_params += param.numel()
-                trainable_params += param.numel()
-            trainable_modules.append(("domain_embedding", module_params))
-            print(f"Trainable: domain_embedding ({module_params /1024/1024:.2f} MB)")
-        # 放开 DiTBlock 中的 patch_align_modulation 参数
-        for name, module in self.pipe.dit.named_modules():
-            if hasattr(module, 'patch_align_modulation'):
-                # patch_align_modulation 是一个 Parameter 对象，不是模块
-                param = module.patch_align_modulation
-                param.requires_grad = True
-                param_count = param.numel()  # type: ignore[attr-defined]
-                trainable_params += param_count
-                trainable_modules.append((f"{name}.patch_align_modulation", param_count))
-                print(f"Trainable: {name}.patch_align_modulation ({param_count /1024/1024:.2f} MB)")
-        
-        # 放开 res_patch_embedding 和 res_patch_embedding_gate 参数
-        if hasattr(self.pipe.dit, 'res_patch_embedding'):
-            for param in self.pipe.dit.res_patch_embedding.parameters():
-                param.requires_grad = True
-                param_count = param.numel()  # type: ignore[attr-defined]
-                trainable_params += param_count
-                trainable_modules.append(("res_patch_embedding", param_count))
-                print(f"Trainable: res_patch_embedding ({param_count /1024/1024:.2f} MB)")
-        
-        if hasattr(self.pipe.dit, 'res_patch_embedding_gate'):
-            param = self.pipe.dit.res_patch_embedding_gate
-            param.requires_grad = True
-            param_count = param.numel()  # type: ignore[attr-defined]
-            trainable_params += param_count
-            trainable_modules.append(("res_patch_embedding_gate", param_count))
-            print(f"Trainable: res_patch_embedding_gate ({param_count /1024/1024:.2f} MB)")
-        
-
-        
         trainable_params = 0
         for name, p in self.pipe.dit.named_parameters():
             if p.requires_grad:
@@ -1736,94 +1404,23 @@ class WanTrainingModule_wan2_1_14b_t2v_matte_lora_train_v9(DiffusionTrainingModu
         self.use_gradient_checkpointing_offload = use_gradient_checkpointing_offload
         self.extra_inputs = extra_inputs.split(",") if extra_inputs is not None else []
     
-    def get_modality_data(self, data: dict, modality_name: Optional[str] = None):
-            """
-            获取模态数据，支持多种模态类型
-            
-            Args:
-                data: 包含各种模态数据的字典
-                
-            Returns:
-                包含模态索引、输入视频和对应模态数据的字典
-            """
-            # 定义支持的模态类型和对应的键名
-            MODALITY_MAPPING = {
-                0: "albedo",
-                1: "basecolor", 
-                2: "depth",
-                3: "material",
-                4: "normal"
-            }
-            
-            # 如果指定了模态名称，仅返回该模态
-            if modality_name is not None:
-                if modality_name not in MODALITY_MAPPING.values():
-                    raise ValueError(f"不支持的模态名称: {modality_name}. 支持: {list(MODALITY_MAPPING.values())}")
-                if data.get(modality_name) is None:
-                    raise ValueError(f"输入数据中不存在模态: {modality_name}")
-                modality_key = modality_name
-                # 反查索引
-                modality_index = [idx for idx, name in MODALITY_MAPPING.items() if name == modality_key][0]
-            else:
-                # 获取可用的模态类型
-                available_modalities = []
-                for idx, key in MODALITY_MAPPING.items():
-                    if data.get(key) is not None:
-                        available_modalities.append(idx)
-                
-                if not available_modalities:
-                    raise ValueError("没有找到任何可用的模态数据")
-                
-                # 随机选择模态索引
-                modality_index = random.choice(available_modalities)
-                modality_key = MODALITY_MAPPING[modality_index]
-            
-            # 获取模态数据
-            modality_data = data[modality_key]
-            
-            # 构建返回字典
-            return_dict = {
-                "modality_index": modality_index,
-                "input_videos": [modality_data],
-                modality_key: [modality_data]
-            }
-            
-            # 统一进行设备转换
-            for key in ["input_videos", modality_key]:
-                if key in return_dict and return_dict[key] is not None:
-                    return_dict[key] = [
-                        tensor.to(self.device).to(self.torch_dtype) 
-                        for tensor in return_dict[key]
-                    ]
-            
-            return return_dict
-
+    
 
     def training_mode(self) -> str:
-        """
-        生成训练模式，并在多GPU环境下同步到所有rank
-        """
         import torch
         import torch.distributed as dist
-
-        # 一共15种训练模式
         modes = [
             "t2RPFB", "R2PFB", "P2RFB", "F2RPB", "B2RPF",
             "RP2FB", "RF2PB", "RB2PF", "PF2RB", "PB2RF",
             "FB2RP", "PFB2R", "RFB2P", "RPB2F", "RPF2B"
         ]
-
-        # 分布式环境
         if dist.is_available() and dist.is_initialized():
             if dist.get_rank() == 0:
-                # 15种模式等概率分布
                 flag = torch.rand(1).item()
                 mode_idx = int(flag * 15)
             else:
-                # 其他 rank 占位，真正的值会被 broadcast 覆盖
                 mode_idx = 0
 
-            # 使用当前 CUDA 设备（假设每个 rank 对应一个 GPU）
             device = torch.device("cuda", torch.cuda.current_device()) if torch.cuda.is_available() else torch.device("cpu")
 
             mode_tensor = torch.tensor([mode_idx], dtype=torch.long, device=device)
@@ -1833,7 +1430,6 @@ class WanTrainingModule_wan2_1_14b_t2v_matte_lora_train_v9(DiffusionTrainingModu
             return modes[mode_idx]  # type: ignore[index]
 
         else:
-            # 单卡训练时的逻辑
             flag = torch.rand(1).item()
             mode_idx = int(flag * 15)
             return modes[mode_idx]  # type: ignore[index]
@@ -1863,7 +1459,6 @@ class WanTrainingModule_wan2_1_14b_t2v_matte_lora_train_v9(DiffusionTrainingModu
             "training_mode": self.training_mode(),
             "is_inference": False,
         }
-        # 对于需要RGB作为输出的模式，使用prompt；其他模式使用空prompt
         rgb_output_modes = ["t2RPFB", "P2RFB", "F2RPB", "B2RPF", "PF2RB", "PB2RF"]
         if inputs_shared["training_mode"] in rgb_output_modes:
             prompt_list = [
@@ -1893,7 +1488,7 @@ class WanTrainingModule_wan2_1_14b_t2v_matte_lora_train_v9(DiffusionTrainingModu
                 inputs_shared[extra_input] = data[extra_input]
         
         # Pipeline units will automatically process the input parameters.
-        if self.pipe.units is not None: # 防止是None
+        if self.pipe.units is not None: # Avoid the case where it is None
             for unit in self.pipe.units:
                 inputs_shared, inputs_posi, inputs_nega = self.pipe.unit_runner(unit, self.pipe, inputs_shared, inputs_posi, inputs_nega) # type: ignore
         return {**inputs_shared, **inputs_posi}
