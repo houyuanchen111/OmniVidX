@@ -59,8 +59,8 @@ class WanVideoPipeline(BasePipeline):
         loader.load(module, lora, alpha=alpha)
 
     def training_loss(self, **inputs):
-        timestep_id = torch.randint(0, self.scheduler.num_train_timesteps, (1,)) # 越大越不加噪
-        timestep_weight = self.scheduler.timesteps[timestep_id].to(dtype=self.torch_dtype, device=self.device) # 越小越不加噪
+        timestep_id = torch.randint(0, self.scheduler.num_train_timesteps, (1,))
+        timestep_weight = self.scheduler.timesteps[timestep_id].to(dtype=self.torch_dtype, device=self.device)
 
         training_mode = inputs["training_mode"]
         if training_mode == "t2RAIN":
@@ -516,49 +516,49 @@ class WanVideoPipeline(BasePipeline):
         models = {name: getattr(self, name) for name in self.in_iteration_models}
 
         B, C, T, H, W = inputs_shared["latents"].shape
-        noise_0 = inputs_shared["latents"][[0]]
+        noise_0 = inputs_shared["latents"][ [0] ]
         if training_mode == "R2AIN":
-            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成rgb cond
+            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "A2RIN":
-            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成albedo cond
+            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "I2RAN":
-            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成irradiance cond
+            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "N2RAI":
-            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成normal cond
+            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "RA2IN":
-            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成rgb cond
-            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成albedo cond
+            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "RI2AN":
-            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成rgb cond
-            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成irradiance cond
+            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "RN2AI":
-            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成rgb cond
-            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成normal cond
+            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "AI2RN":
-            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成albedo cond
-            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成irradiance cond
+            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "AN2RI":
-            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成albedo cond
-            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成normal cond
+            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "IN2RA":
-            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成irradiance cond
-            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成normal cond
+            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "AIN2R":
-            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成albedo cond
-            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成irradiance cond
-            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成normal cond
+            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "RIN2A":
-            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成rgb cond
-            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成irradiance cond
-            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成normal cond
+            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "RAN2I":
-            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成rgb cond
-            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成albedo cond
-            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成normal cond
+            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][3], sigmas = self.scheduler.add_noise(inputs_shared["inference_normal_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
         elif training_mode == "RAI2N":
-            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成rgb cond
-            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成albedo cond
-            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device)) # 替换成irradiance cond
+            inputs_shared["latents"][0], sigmas = self.scheduler.add_noise(inputs_shared["inference_rgb_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][1], sigmas = self.scheduler.add_noise(inputs_shared["inference_albedo_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
+            inputs_shared["latents"][2], sigmas = self.scheduler.add_noise(inputs_shared["inference_irradiance_latents"], noise_0, self.scheduler.timesteps[torch.tensor([999])].to(dtype=self.torch_dtype, device=self.device))
 
         for progress_id, timestep in enumerate(tqdm(scheduler_copy.timesteps)):
             timestep = timestep.unsqueeze(0).to(dtype=self.torch_dtype, device=self.device)
@@ -867,9 +867,6 @@ class WanVideoUnit_ShapeChecker(PipelineUnit):
         super().__init__(input_params=("height", "width", "num_frames"))
 
     def process(self, pipe: WanVideoPipeline, height, width, num_frames):
-        """
-        本质上是支持了batch输入
-        """
         if isinstance(height, torch.Tensor):
             height = height[0].item()
         if isinstance(width, torch.Tensor):
@@ -888,12 +885,12 @@ class WanVideoUnit_NoiseInitializer(PipelineUnit):
         super().__init__(input_params=("height", "width", "num_frames", "seed", "rand_device"))
 
     def process(self, pipe: WanVideoPipeline, height, width, num_frames, seed, rand_device):
-        length = (num_frames - 1) // 4 + 1 # 改成普通的noise就行
+        length = (num_frames - 1) // 4 + 1 
         noise = pipe.generate_noise((4, 16, length, height//8, width//8), seed=seed, rand_device=rand_device) # 三种模态的noise应该不一样
         return {"noise": noise}
 
 class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
-    # 将normal和depth 分开encode到latent space
+   
     def __init__(self):
         super().__init__(
             input_params=("input_videos", "noise", "tiled", "tile_size", "tile_stride", "is_inference", "modality_index", "inference_rgb", "inference_albedo", "inference_irradiance", "inference_normal", "height", "width", "training_mode"),
@@ -901,10 +898,9 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
         )
     def process(self, pipe: WanVideoPipeline, input_videos, noise, tiled, tile_size, tile_stride, is_inference, modality_index, inference_rgb, inference_albedo, inference_irradiance, inference_normal, height, width, training_mode):
         if is_inference:
-            # t2RAIN: Text to RGB, Albedo, Irradiance, Normal - 不需要任何条件输入
+       
             if training_mode == "t2RAIN":
                 return {"latents": noise}
-            # R2AIN: RGB to Albedo, Irradiance, Normal - 需要 RGB 条件
             elif training_mode == "R2AIN":
                 if inference_rgb is not None and isinstance(inference_rgb, Image.Image):
                     pipe.load_models_to_device(["vae"])
@@ -916,7 +912,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     inference_rgb = pipe.preprocess_video(inference_rgb)
                     inference_rgb_latents = pipe.vae.encode(inference_rgb, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
                     return {"latents": noise, "inference_rgb_latents": inference_rgb_latents}
-            # A2RIN: Albedo to RGB, Irradiance, Normal - 需要 Albedo 条件
             elif training_mode == "A2RIN":
                 if inference_albedo is not None and isinstance(inference_albedo, Image.Image):
                     pipe.load_models_to_device(["vae"])
@@ -928,7 +923,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     inference_albedo = pipe.preprocess_video(inference_albedo)
                     inference_albedo_latents = pipe.vae.encode(inference_albedo, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
                     return {"latents": noise, "inference_albedo_latents": inference_albedo_latents}
-            # I2RAN: Irradiance to RGB, Albedo, Normal - 需要 Irradiance 条件
             elif training_mode == "I2RAN":
                 if inference_irradiance is not None and isinstance(inference_irradiance, Image.Image):
                     pipe.load_models_to_device(["vae"])
@@ -940,7 +934,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     inference_irradiance = pipe.preprocess_video(inference_irradiance)
                     inference_irradiance_latents = pipe.vae.encode(inference_irradiance, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
                     return {"latents": noise, "inference_irradiance_latents": inference_irradiance_latents}
-            # N2RAI: Normal to RGB, Albedo, Irradiance - 需要 Normal 条件
             elif training_mode == "N2RAI":
                 if inference_normal is not None and isinstance(inference_normal, Image.Image):
                     pipe.load_models_to_device(["vae"])
@@ -952,7 +945,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     inference_normal = pipe.preprocess_video(inference_normal)
                     inference_normal_latents = pipe.vae.encode(inference_normal, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
                     return {"latents": noise, "inference_normal_latents": inference_normal_latents}
-            # RA2IN: RGB, Albedo to Irradiance, Normal - 需要 RGB 和 Albedo 条件
             elif training_mode == "RA2IN":
                 if inference_rgb is not None and isinstance(inference_rgb, Image.Image):
                     pipe.load_models_to_device(["vae"])
@@ -971,7 +963,6 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     inference_albedo = pipe.preprocess_video(inference_albedo)
                     inference_albedo_latents = pipe.vae.encode(inference_albedo, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
                 return {"latents": noise, "inference_rgb_latents": inference_rgb_latents, "inference_albedo_latents": inference_albedo_latents}
-            # RI2AN: RGB, Irradiance to Albedo, Normal - 需要 RGB 和 Irradiance 条件
             elif training_mode == "RI2AN":
                 if inference_rgb is not None and isinstance(inference_rgb, Image.Image):
                     pipe.load_models_to_device(["vae"])
@@ -990,7 +981,7 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     inference_irradiance = pipe.preprocess_video(inference_irradiance)
                     inference_irradiance_latents = pipe.vae.encode(inference_irradiance, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
                 return {"latents": noise, "inference_rgb_latents": inference_rgb_latents, "inference_irradiance_latents": inference_irradiance_latents}
-            # RN2AI: RGB, Normal to Albedo, Irradiance - 需要 RGB 和 Normal 条件
+   
             elif training_mode == "RN2AI":
                 if inference_rgb is not None and isinstance(inference_rgb, Image.Image):
                     pipe.load_models_to_device(["vae"])
@@ -1009,7 +1000,7 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     inference_normal = pipe.preprocess_video(inference_normal)
                     inference_normal_latents = pipe.vae.encode(inference_normal, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
                 return {"latents": noise, "inference_rgb_latents": inference_rgb_latents, "inference_normal_latents": inference_normal_latents}
-            # AI2RN: Albedo, Irradiance to RGB, Normal - 需要 Albedo 和 Irradiance 条件
+
             elif training_mode == "AI2RN":
                 if inference_albedo is not None and isinstance(inference_albedo, Image.Image):
                     pipe.load_models_to_device(["vae"])
@@ -1047,7 +1038,7 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     inference_normal = pipe.preprocess_video(inference_normal)
                     inference_normal_latents = pipe.vae.encode(inference_normal, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
                 return {"latents": noise, "inference_albedo_latents": inference_albedo_latents, "inference_normal_latents": inference_normal_latents}
-            # IN2RA: Irradiance, Normal to RGB, Albedo - 需要 Irradiance 和 Normal 条件
+
             elif training_mode == "IN2RA":
                 if inference_irradiance is not None and isinstance(inference_irradiance, Image.Image):
                     pipe.load_models_to_device(["vae"])
@@ -1066,7 +1057,7 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     inference_normal = pipe.preprocess_video(inference_normal)
                     inference_normal_latents = pipe.vae.encode(inference_normal, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
                 return {"latents": noise, "inference_irradiance_latents": inference_irradiance_latents, "inference_normal_latents": inference_normal_latents}
-            # AIN2R: Albedo, Irradiance, Normal to RGB - 需要 Albedo、Irradiance 和 Normal 条件
+   
             elif training_mode == "AIN2R":
                 if inference_albedo is not None and isinstance(inference_albedo, Image.Image):
                     pipe.load_models_to_device(["vae"])
@@ -1093,7 +1084,7 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     inference_normal = pipe.preprocess_video(inference_normal)
                     inference_normal_latents = pipe.vae.encode(inference_normal, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
                 return {"latents": noise, "inference_albedo_latents": inference_albedo_latents, "inference_irradiance_latents": inference_irradiance_latents, "inference_normal_latents": inference_normal_latents}
-            # RIN2A: RGB, Irradiance, Normal to Albedo - 需要 RGB、Irradiance 和 Normal 条件
+
             elif training_mode == "RIN2A":
                 if inference_rgb is not None and isinstance(inference_rgb, Image.Image):
                     pipe.load_models_to_device(["vae"])
@@ -1120,7 +1111,7 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     inference_normal = pipe.preprocess_video(inference_normal)
                     inference_normal_latents = pipe.vae.encode(inference_normal, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
                 return {"latents": noise, "inference_rgb_latents": inference_rgb_latents, "inference_irradiance_latents": inference_irradiance_latents, "inference_normal_latents": inference_normal_latents}
-            # RAN2I: RGB, Albedo, Normal to Irradiance - 需要 RGB、Albedo 和 Normal 条件
+
             elif training_mode == "RAN2I":
                 if inference_rgb is not None and isinstance(inference_rgb, Image.Image):
                     pipe.load_models_to_device(["vae"])
@@ -1147,7 +1138,7 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                     inference_normal = pipe.preprocess_video(inference_normal)
                     inference_normal_latents = pipe.vae.encode(inference_normal, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
                 return {"latents": noise, "inference_rgb_latents": inference_rgb_latents, "inference_albedo_latents": inference_albedo_latents, "inference_normal_latents": inference_normal_latents}
-            # RAI2N: RGB, Albedo, Irradiance to Normal - 需要 RGB、Albedo 和 Irradiance 条件
+
             elif training_mode == "RAI2N":
                 if inference_rgb is not None and isinstance(inference_rgb, Image.Image):
                     pipe.load_models_to_device(["vae"])
@@ -1198,9 +1189,8 @@ class WanVideoUnit_PromptEmbedder(PipelineUnit):
 
     def process(self, pipe: WanVideoPipeline, prompt, positive) -> dict:
         pipe.load_models_to_device(self.onload_model_names)
-        prompt_emb = pipe.prompter.encode_prompt(prompt, positive=positive, device=str(pipe.device)) # 如果device本身就已经是str了，str()会返回原值
-        # prompt_emb = prompt_emb.repeat(4, 1, 1) # 四种模态的prompt处理成一样的就行了
-        return {"context": prompt_emb} # 我觉得这个可以预处理保存成pth
+        prompt_emb = pipe.prompter.encode_prompt(prompt, positive=positive, device=str(pipe.device)) 
+        return {"context": prompt_emb}
         
 def model_fn_wan_video(
     dit: WanModel,
@@ -1259,52 +1249,38 @@ def model_fn_wan_video(
                                             get_sp_group)
     
     t = torch.cat([dit.time_embedding(sinusoidal_embedding_1d(dit.freq_dim, timestep[i])) for i in range(len(timestep))], dim=0) # 4 1536(d)
-    t_mod = dit.time_projection(t).unflatten(1, (6, dit.dim)) # 为了DiT的AdaLN, 所以分成六份: 1 6 1536
+    t_mod = dit.time_projection(t).unflatten(1, (6, dit.dim)) 
     if motion_bucket_id is not None and motion_controller is not None:
         t_mod = t_mod + motion_controller(motion_bucket_id).unflatten(1, (6, dit.dim))
-    context = dit.text_embedding(context) # mlp -> silu -> mlp # b l c； c 的维度要和dit的channel对上，L没关系
+    context = dit.text_embedding(context) 
 
     x = latents # noise
     B = x.shape[0]
     # Merged cfg
     if x.shape[0] != context.shape[0]:
         x = torch.concat([x] * context.shape[0], dim=0)
-    # if timestep.shape[0] != context.shape[0]:
-    #     timestep = torch.concat([timestep] * context.shape[0], dim=0)
 
 
-    if dit.has_image_input: # y 是 ctrl video latent 
-        x = torch.cat([x, y], dim=1)  # (b, c_x + c_y, f, h, w) # cat在channel维度 # type: ignore
+    if dit.has_image_input:
+        x = torch.cat([x, y], dim=1) 
         clip_embdding = dit.img_emb(clip_feature).repeat(B, 1, 1)
-        context = torch.cat([clip_embdding, context], dim=1) # 检查原来的有没有
+        context = torch.cat([clip_embdding, context], dim=1)
 
     x, (f, h, w) = dit.patchify(x, control_camera_latents_input) # type: ignore
 
-    # 为不同模态（albedo，depth，material，normal）添加可学习的 domain embedding
-    # x: (B, L, C)
-    # B = x.shape[0]
-    # if B % 4 == 0 and hasattr(dit, "domain_embedding"):
-    #     domain_ids = torch.zeros(B, dtype=torch.long, device=x.device)
-    #     domain_ids[B // 4:B // 2] = 1        # 第二个1/4批次设为1
-    #     domain_ids[B // 2:B // 4 * 3] = 2    # 第三个1/4批次设为2  
-    #     domain_ids[B // 4 * 3:] = 3  
-    #     de = dit.domain_embedding(domain_ids)  # (B, C)
-    #     x = x + de.unsqueeze(1)  # 广播到序列长度维度
-
-    
     # Reference image 
     if reference_latents is not None:
         if len(reference_latents.shape) == 5:
             reference_latents = reference_latents[:, :, 0]
         reference_latents = dit.ref_conv(reference_latents).flatten(2).transpose(1, 2)
-        x = torch.concat([reference_latents, x], dim=1) # cat 在L维度
+        x = torch.concat([reference_latents, x], dim=1) 
         f += 1
     
     freqs = torch.cat([
         dit.freqs[0][:f].view(f, 1, 1, -1).expand(f, h, w, -1),
         dit.freqs[1][:h].view(1, h, 1, -1).expand(f, h, w, -1),
         dit.freqs[2][:w].view(1, 1, w, -1).expand(f, h, w, -1)
-    ], dim=-1).reshape(f * h * w, 1, -1).to(x.device) # 3d rope, 记录帧间时序
+    ], dim=-1).reshape(f * h * w, 1, -1).to(x.device) 
     
     # TeaCache
     if tea_cache is not None:
@@ -1368,7 +1344,7 @@ class WanTrainingModule_wan2_1_14b_t2v_pbr_lora_video_train_v6(DiffusionTraining
         model_paths=None, model_id_with_origin_paths=None,
         trainable_models=None,
         lora_base_model=None, lora_target_modules="q,k,v,o,ffn.0,ffn.2", lora_rank=32, lora_modalities:list[str]=None,
-        use_gradient_checkpointing=True, # 默认false好，xiuyu的经验 # 还是改成true吧，不然训不下
+        use_gradient_checkpointing=True, 
         use_gradient_checkpointing_offload=False,
         extra_inputs=None,
         resume_from_checkpoint: Optional[str] = None,
@@ -1387,13 +1363,11 @@ class WanTrainingModule_wan2_1_14b_t2v_pbr_lora_video_train_v6(DiffusionTraining
             model_id_with_origin_paths = model_id_with_origin_paths.split(",")
             model_configs += [ModelConfig(model_id=i.split(":")[0], origin_file_pattern=i.split(":")[1]) for i in model_id_with_origin_paths]
         tokenizer_config = ModelConfig(path="checkpoints/Wan2.1-T2V-1.3B/google/umt5-xxl")
-        # 检测可用的设备
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
-
-        print(f"使用设备: {device}")
+        print(f"Using device: {device}")
         self.torch_dtype = torch.bfloat16
-        self.pipe = WanVideoPipeline.from_pretrained(torch_dtype=torch.bfloat16, device=device, tokenizer_config=tokenizer_config, model_configs=model_configs,redirect_common_files=False) # 加载预训练权重
+        self.pipe = WanVideoPipeline.from_pretrained(torch_dtype=torch.bfloat16, device=device, tokenizer_config=tokenizer_config, model_configs=model_configs,redirect_common_files=False) # Load pretrained weights
 
         if lora_modalities is not None:
             lora_configs = []
@@ -1410,7 +1384,6 @@ class WanTrainingModule_wan2_1_14b_t2v_pbr_lora_video_train_v6(DiffusionTraining
 
 
         if lora_modalities is None:
-            # 先加lora的结构，方便resume; 加了lora是默认放开梯度的
             if lora_base_model is not None:
                 model = self.add_lora_to_model(
                     getattr(self.pipe, lora_base_model), 
@@ -1418,11 +1391,10 @@ class WanTrainingModule_wan2_1_14b_t2v_pbr_lora_video_train_v6(DiffusionTraining
                     lora_rank=lora_rank
                 )
                 setattr(self.pipe, lora_base_model, model)
-                print(f"[LoRA] 已添加到模型: {lora_base_model}")
+                print(f"[LoRA] has been added to: {lora_base_model}")
         
-        # 检查LoRA有没有成功加上
+
         if lora_base_model is not None:
-            print(f"\n[LoRA] 检查LoRA是否成功添加:")
             hit_names = []
             for name, module in self.pipe.dit.named_modules():
                 if any(x in name for x in lora_target_modules.split(",")):
@@ -1430,169 +1402,45 @@ class WanTrainingModule_wan2_1_14b_t2v_pbr_lora_video_train_v6(DiffusionTraining
                     has_lora_param = any("lora" in pname.lower() for pname, _ in module.named_parameters(recurse=True))
                     if has_lora or has_lora_param:
                         hit_names.append(name)
-            print(f"[LoRA] 命中的线性层数量: {len(hit_names)}") # num_blocks * layer_num
-        # multi-lora 权重的加载没有问题了
-        if albedo_resume_from_checkpoint is not None:
-            state_dict = load_file(albedo_resume_from_checkpoint) # safetensors 不需要map_location
-            prefix = "dit." # 去掉不想要的前缀
-            state_dict = {k[len(prefix):] if k.startswith(prefix) else k: v for k, v in state_dict.items()}
-            state_dict = {k.replace("default", "albedo"): v for k, v in state_dict.items()} # 重命名
-            try:
-                missing_keys, unexpected_keys = self.pipe.dit.load_state_dict(state_dict, strict=False)
-                assert unexpected_keys == [], "unexpected_keys not empty"
-            except Exception as e:
-                print(f"从checkpoint {albedo_resume_from_checkpoint} 恢复训练失败: {e}")
-            if missing_keys:
-                print(f"⚠️ 缺失键: {len(missing_keys)} 个")
-                # 显示前几个缺失键作为示例
-                for key in list(missing_keys)[:5]:
-                    print(f"  - {key}")
-                    #-------start------#
-        if material_resume_from_checkpoint is not None:
-            state_dict = load_file(material_resume_from_checkpoint) # safetensors 不需要map_location
-            prefix = "dit." # 去掉不想要的前缀
-            state_dict = {k[len(prefix):] if k.startswith(prefix) else k: v for k, v in state_dict.items()}
-            state_dict = {k.replace("default", "material"): v for k, v in state_dict.items()} # 重命名
-            try:
-                missing_keys, unexpected_keys = self.pipe.dit.load_state_dict(state_dict, strict=False)
-                assert unexpected_keys == [], "unexpected_keys not empty"
-            except Exception as e:
-                print(f"从checkpoint {material_resume_from_checkpoint} 恢复训练失败: {e}")
-            if missing_keys:
-                print(f"⚠️ 缺失键: {len(missing_keys)} 个")
-                # 显示前几个缺失键作为示例
-                for key in list(missing_keys)[:5]:
-                    print(f"  - {key}")
-                    #-------start------#
-        if normal_resume_from_checkpoint is not None:
-            state_dict = load_file(normal_resume_from_checkpoint) # safetensors 不需要map_location
-            prefix = "dit." # 去掉不想要的前缀
-            state_dict = {k[len(prefix):] if k.startswith(prefix) else k: v for k, v in state_dict.items()}
-            state_dict = {k.replace("default", "normal"): v for k, v in state_dict.items()} # 重命名
-            try:
-                missing_keys, unexpected_keys = self.pipe.dit.load_state_dict(state_dict, strict=False)
-                assert unexpected_keys == [], "unexpected_keys not empty"
-            except Exception as e:
-                print(f"从checkpoint {normal_resume_from_checkpoint} 恢复训练失败: {e}")
-            if missing_keys:
-                print(f"⚠️ 缺失键: {len(missing_keys)} 个")
-                # 显示前几个缺失键作为示例
-                for key in list(missing_keys)[:5]:
-                    print(f"  - {key}")
-                    #-------start------#
+
         if resume_from_checkpoint is not None:
-            state_dict = load_file(resume_from_checkpoint) # safetensors 不需要map_location
-            prefix = "dit." # 去掉不想要的前缀
+            state_dict = load_file(resume_from_checkpoint) 
+            prefix = "dit."
             state_dict = {k[len(prefix):] if k.startswith(prefix) else k: v for k, v in state_dict.items()}
             try:
                 missing_keys, unexpected_keys = self.pipe.dit.load_state_dict(state_dict, strict=False)
                 assert unexpected_keys == [], "unexpected_keys not empty"
             except Exception as e:
-                print(f"从checkpoint {resume_from_checkpoint} 恢复训练失败: {e}")
+                print(f"Failed to resume training from checkpoint {resume_from_checkpoint}: {e}")
             if missing_keys:
-                print(f"⚠️ 缺失键: {len(missing_keys)} 个")
-                # 显示前几个缺失键作为示例
+                print(f"⚠️ missing keys: {len(missing_keys)} ")
                 for key in list(missing_keys)[:5]:
                     print(f"  - {key}")
-                    #-------start------#
 
-
-        self.pipe.units = [ # 一定要加()，这样才实例化
+        self.pipe.units = [ 
             WanVideoUnit_ShapeChecker(),
-            # WanVideoUnit_Modality_Embedder(),
             WanVideoUnit_NoiseInitializer(),
             WanVideoUnit_InputVideoEmbedder(),
             WanVideoUnit_PromptEmbedder(),
-            # WanVideoUnit_ControlVideoEmbedder(),
-            # WanVideoUnit_ClipFeatureEmbedder(),
         ]
 
         self.pipe.scheduler.set_timesteps(1000, training=True)
-        
-        # Freeze all models first
         self.pipe.freeze_except([] if trainable_models is None else trainable_models.split(","))
-        
-        # 2. 放开LoRA相关模块的梯度
+
         if lora_base_model is not None:
-            print("\n放开LoRA相关模块训练:")
             lora_trainable_params = 0
-            processed_lora_modules = set()  # 避免重复计算
+            processed_lora_modules = set()  
             for name, param in self.pipe.dit.named_parameters():
-                if "lora" in name.lower(): # 不放开rgb的LoRA,让其保证只使用原因模型的权重
+                if "lora" in name.lower(): 
                     param.requires_grad = True
                     lora_trainable_params += param.numel()
-                    module_name = name.rsplit('.', 2)[0]  # 去掉 .default.weight
+                    module_name = name.rsplit('.', 2)[0] 
                     if module_name not in processed_lora_modules:
                         processed_lora_modules.add(module_name)
                         print(f"Trainable LoRA: {module_name} ({param.numel() /1024/1024:.2f} MB)")
             
-            print(f"LoRA总可训练参数: {lora_trainable_params /1024/1024:.2f} MB")
+            print(f"LoRA trainable params: {lora_trainable_params /1024/1024:.2f} MB")
 
-        # 3. 再放开其余模块
-        print("\n放开特定组件训练:")
-        total_params = 0
-        trainable_modules = []
-        trainable_params = 0
-        for name, module in self.pipe.dit.named_modules():
-            # 放开 DiTBlock 中的 projector
-            if "projector" in name:
-                module_params = 0
-                for param in module.parameters():
-                    param.requires_grad = True
-                    module_params += param.numel()
-                    trainable_params += param.numel()
-                trainable_modules.append((name, module_params))
-                print(f"Trainable: {name} ({module_params /1024/1024:.2f} MB)")
-            
-            # 放开 DiTBlock 中的 patch_align_cross_modality_attn和对应的norm
-            if "patch_align_cross_modality_attn" in name:
-                module_params = 0
-                for param in module.parameters():
-                    param.requires_grad = True
-                    module_params += param.numel()
-                    trainable_params += param.numel()
-                trainable_modules.append((name, module_params))
-                print(f"Trainable: {name} ({module_params /1024/1024:.2f} MB)")
-                    
-        # 放开 WanModel 中的 domain_embedding
-        if hasattr(self.pipe.dit, 'domain_embedding'):
-            module_params = 0
-            for param in self.pipe.dit.domain_embedding.parameters():
-                param.requires_grad = True
-                module_params += param.numel()
-                trainable_params += param.numel()
-            trainable_modules.append(("domain_embedding", module_params))
-            print(f"Trainable: domain_embedding ({module_params /1024/1024:.2f} MB)")
-        # 放开 DiTBlock 中的 patch_align_modulation 参数
-        for name, module in self.pipe.dit.named_modules():
-            if hasattr(module, 'patch_align_modulation'):
-                # patch_align_modulation 是一个 Parameter 对象，不是模块
-                param = module.patch_align_modulation
-                param.requires_grad = True
-                param_count = param.numel()
-                trainable_params += param_count
-                trainable_modules.append((f"{name}.patch_align_modulation", param_count))
-                print(f"Trainable: {name}.patch_align_modulation ({param_count /1024/1024:.2f} MB)")
-        
-        # 放开 res_patch_embedding 和 res_patch_embedding_gate 参数
-        if hasattr(self.pipe.dit, 'res_patch_embedding'):
-            for param in self.pipe.dit.res_patch_embedding.parameters():
-                param.requires_grad = True
-                param_count = param.numel()
-                trainable_params += param_count
-                trainable_modules.append(("res_patch_embedding", param_count))
-                print(f"Trainable: res_patch_embedding ({param_count /1024/1024:.2f} MB)")
-        
-        if hasattr(self.pipe.dit, 'res_patch_embedding_gate'):
-            param = self.pipe.dit.res_patch_embedding_gate
-            param.requires_grad = True
-            param_count = param.numel()
-            trainable_params += param_count
-            trainable_modules.append(("res_patch_embedding_gate", param_count))
-            print(f"Trainable: res_patch_embedding_gate ({param_count /1024/1024:.2f} MB)")
-        
-
-        
         trainable_params = 0
         for name, p in self.pipe.dit.named_parameters():
             if p.requires_grad:
@@ -1604,131 +1452,34 @@ class WanTrainingModule_wan2_1_14b_t2v_pbr_lora_video_train_v6(DiffusionTraining
         self.use_gradient_checkpointing_offload = use_gradient_checkpointing_offload
         self.extra_inputs = extra_inputs.split(",") if extra_inputs is not None else []
     
-    def get_modality_data(self, data: dict, modality_name: Optional[str] = None):
-            """
-            获取模态数据，支持多种模态类型
-            
-            Args:
-                data: 包含各种模态数据的字典
-                
-            Returns:
-                包含模态索引、输入视频和对应模态数据的字典
-            """
-            # 定义支持的模态类型和对应的键名
-            MODALITY_MAPPING = {
-                0: "albedo",
-                1: "basecolor", 
-                2: "depth",
-                3: "material",
-                4: "normal"
-            }
-            
-            # 如果指定了模态名称，仅返回该模态
-            if modality_name is not None:
-                if modality_name not in MODALITY_MAPPING.values():
-                    raise ValueError(f"不支持的模态名称: {modality_name}. 支持: {list(MODALITY_MAPPING.values())}")
-                if data.get(modality_name) is None:
-                    raise ValueError(f"输入数据中不存在模态: {modality_name}")
-                modality_key = modality_name
-                # 反查索引
-                modality_index = [idx for idx, name in MODALITY_MAPPING.items() if name == modality_key][0]
-            else:
-                # 获取可用的模态类型
-                available_modalities = []
-                for idx, key in MODALITY_MAPPING.items():
-                    if data.get(key) is not None:
-                        available_modalities.append(idx)
-                
-                if not available_modalities:
-                    raise ValueError("没有找到任何可用的模态数据")
-                
-                # 随机选择模态索引
-                modality_index = random.choice(available_modalities)
-                modality_key = MODALITY_MAPPING[modality_index]
-            
-            # 获取模态数据
-            modality_data = data[modality_key]
-            
-            # 构建返回字典
-            return_dict = {
-                "modality_index": modality_index,
-                "input_videos": [modality_data],
-                modality_key: [modality_data]
-            }
-            
-            # 统一进行设备转换
-            for key in ["input_videos", modality_key]:
-                if key in return_dict and return_dict[key] is not None:
-                    return_dict[key] = [
-                        tensor.to(self.device).to(self.torch_dtype) 
-                        for tensor in return_dict[key]
-                    ]
-            
-            return return_dict
-
+   
 
     def training_mode(self) -> str:
-        """
-        生成训练模式，并在多GPU环境下同步到所有rank
-        """
         import torch.distributed as dist
-        
-        # 检查是否在分布式环境中
+        modes = [
+                "t2RAIN", "R2AIN", "A2RIN", "I2RAN", "N2RAI", 
+                "RA2IN", "RI2AN", "RN2AI", "AI2RN", "AN2RI",
+                "IN2RA", "AIN2R", "RIN2A", "RAN2I", "RAI2N"
+                ]
         if dist.is_available() and dist.is_initialized():
-            # 只有 rank 0 生成随机数
             if dist.get_rank() == 0:
                 flag = torch.rand(1).item()
-                if flag < 0.5:
-                    selected_mode = "R2AIN"  # 50% 概率
-                else:
-                    # 其余14种模式平分剩余50%概率
-                    remaining_prob = (flag - 0.5) / 0.5  # 归一化到[0,1]
-                    remaining_mode_idx = int(remaining_prob * 14)  # [0, 13]
-
-                    # 不包含R2AIN的模式列表
-                    other_modes = [
-                        "t2RAIN", "A2RIN", "I2RAN", "N2RAI", "RA2IN",
-                        "RI2AN", "RN2AI", "AI2RN", "AN2RI", "IN2RA",
-                        "AIN2R", "RIN2A", "RAN2I", "RAI2N"
-                    ]
-                    selected_mode = other_modes[remaining_mode_idx]
+                mode_idx = int(flag * 15)
             else:
-                selected_mode = "R2AIN"  # 其他rank默认值
+                mode_idx = 0
 
-            # 广播字符串到所有rank
-            # 将字符串转换为字节进行广播
-            mode_bytes = selected_mode.encode('utf-8')
-            max_len = 10  # 足够长的模式字符串
-            mode_tensor = torch.zeros(max_len, dtype=torch.uint8, device='cuda')
-            if dist.get_rank() == 0:
-                for i, b in enumerate(mode_bytes):
-                    mode_tensor[i] = b
+            device = torch.device("cuda", torch.cuda.current_device()) if torch.cuda.is_available() else torch.device("cpu")
+
+            mode_tensor = torch.tensor([mode_idx], dtype=torch.long, device=device)
             dist.broadcast(mode_tensor, src=0)
+            mode_idx = mode_tensor.item()
 
-            # 转换回字符串
-            received_bytes = []
-            for i in range(max_len):
-                if mode_tensor[i] > 0:
-                    received_bytes.append(int(mode_tensor[i].item()))
-            received_mode = bytes(received_bytes).decode('utf-8')
-            return received_mode
+            return modes[mode_idx]  # type: ignore[index]
+
         else:
-            # 单卡训练时的逻辑：R2AIN 50%概率，其余14种模式平分剩余50%
             flag = torch.rand(1).item()
-            if flag < 0.5:
-                return "R2AIN"  # 50% 概率
-            else:
-                # 其余14种模式平分剩余50%概率
-                remaining_prob = (flag - 0.5) / 0.5  # 归一化到[0,1]
-                remaining_mode_idx = int(remaining_prob * 14)  # 14种模式
-
-                # 从modes列表中排除R2AIN，选择其余14种
-                other_modes = [
-                    "t2RAIN", "A2RIN", "I2RAN", "N2RAI", "RA2IN",
-                    "RI2AN", "RN2AI", "AI2RN", "AN2RI", "IN2RA",
-                    "AIN2R", "RIN2A", "RAN2I", "RAI2N"
-                ]
-                return other_modes[remaining_mode_idx]
+            mode_idx = int(flag * 15)
+            return modes[mode_idx]  # type: ignore[index]
 
 
     def forward_preprocess(self, data):
@@ -1753,9 +1504,8 @@ class WanTrainingModule_wan2_1_14b_t2v_pbr_lora_video_train_v6(DiffusionTraining
             "clip_feature": None,
             "y": None,
             "training_mode": data["training_mode"],
-            "dataset_name": data.get("dataset_name", "")  # 安全获取 dataset_name，默认为空字符串
         }
-        if inputs_shared["training_mode"] in ["t2RAIN", "A2RIN", "I2RAN", "N2RAI", "AI2RN", "AN2RI", "IN2RA"]: # 除了AIN2R之外所以涉及到R作为target的
+        if inputs_shared["training_mode"] in ["t2RAIN", "A2RIN", "I2RAN", "N2RAI", "AI2RN", "AN2RI", "IN2RA"]: 
             prompt_list = [
                 data["prompt"][0],
                 data["prompt"][0],
@@ -1771,7 +1521,6 @@ class WanTrainingModule_wan2_1_14b_t2v_pbr_lora_video_train_v6(DiffusionTraining
                 ""
             ]
             inputs_posi = {"prompt": prompt_list}
-        # 只试试albedo的效果
         input_videos = torch.cat((data["rgb"], data["albedo"], data["irradiance"], data["normal"]), dim=0) # 4b c t h w
         inputs_shared["input_videos"] = [input_videos]
         for extra_input in self.extra_inputs:
@@ -1784,8 +1533,7 @@ class WanTrainingModule_wan2_1_14b_t2v_pbr_lora_video_train_v6(DiffusionTraining
             else:
                 inputs_shared[extra_input] = data[extra_input]
         
-        # Pipeline units will automatically process the input parameters.
-        if self.pipe.units is not None: # 防止是None
+        if self.pipe.units is not None:
             for unit in self.pipe.units:
                 inputs_shared, inputs_posi, inputs_nega = self.pipe.unit_runner(unit, self.pipe, inputs_shared, inputs_posi, inputs_nega) # type: ignore
         return {**inputs_shared, **inputs_posi}
