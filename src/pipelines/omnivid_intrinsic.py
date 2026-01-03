@@ -1,12 +1,3 @@
-"""
-改成any2any吧，讲故事好讲
-然后设计到rgb做condition的，都不加prompt
-如果rgb时tgt，除了reconstruction之外，都要prompt
-R：RGB
-A：Albedo
-I；Irradiance
-N：Normal
-""" 
 import torchvision
 from numpy import vdot
 import torch, types, copy,json,random
@@ -19,7 +10,6 @@ from safetensors.torch import load_file
 from ..trainers.util import DiffusionTrainingModule
 from .util import BasePipeline, PipelineUnit, PipelineUnitRunner, ModelConfig, TeaCache, TemporalTiler_BCTHW
 from ..models import ModelManager, load_state_dict
-# from ..models.wan_video_dit_albedo_depth_material_normal_wonder3d_v0 import WanModel, RMSNorm, sinusoidal_embedding_1d
 from ..models.wan_video_dit_pbr_video_v3 import WanModel, RMSNorm, sinusoidal_embedding_1d
 from ..models.wan_video_text_encoder import WanTextEncoder, T5RelativeEmbedding, T5LayerNorm
 from ..models.wan_video_vae import WanVideoVAE, RMS_norm, CausalConv3d, Upsample 
