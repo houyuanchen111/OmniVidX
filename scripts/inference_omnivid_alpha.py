@@ -74,7 +74,7 @@ def _load_mp4_as_video_tensor(
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default="configs/wan2_1_14b_t2v_matte_lora_video_w_image_w_prompt_alpha_RB2PF_inference_v9.yaml", help='YAML 配置文件路径')
+    parser.add_argument('--config', type=str, default="configs/omnivid_alpha_inference.yaml", help='YAML 配置文件路径')
     args = parser.parse_args()
 
     # 加载配置

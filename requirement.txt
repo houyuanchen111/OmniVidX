@@ -12,3 +12,4 @@ pandas
 accelerate
 peft
 datasets
+scripts/__pycache__
