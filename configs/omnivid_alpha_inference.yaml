@@ -1,0 +1,25 @@
+# ===============================================================
+# env variables
+# ===============================================================
+# 换成diffusion renderer的数据
+environment_variables:
+  # CUDA_VISIBLE_DEVICES: 0
+# ===============================================================
+# experiment_name
+# ===============================================================
+
+experiment_name: "wan2_1_14b_t2v_matte_lora_video_w_image_w_prompt_alpha_FB2RP_inference_v9"   
+
+
+model:
+  name: 'WanTrainingModule_wan2_1_14b_t2v_matte_lora_train_v9' # <-- 对应 MODEL_REGISTRY 中的键
+  params:
+    model_paths: '["checkpoints/Wan2.1-T2V-1.3B/models_t5_umt5-xxl-enc-bf16.pth","checkpoints/Wan2.1-T2V-1.3B/Wan2.1_VAE.pth"]'
+    # extra_inputs: "control_video"
+    lora_base_model: "dit"
+    lora_target_modules: "self_attn.q,self_attn.k,self_attn.v,self_attn.o,ffn.0,ffn.2"
+    lora_rank: 32
+    lora_modalities: ["com","pha","fgr","bgr"] # 新加一个参数，用于控制不同的lora的名字（个数） # sft lora从零开训试一下
+    resume_from_checkpoint: "outputs/train_wan21_14b_t2v_matte_lora_video_train_w_image_w_prompt_train_v9_20251227_1652379+1320/epoch_18/diffusion_pytorch_model.safetensors"
+
+
