@@ -15,7 +15,7 @@ prompt: "一只大熊猫直立坐着，双手捧着一根竹子，满足地咀�
 model:
   name: 'OmniVidAlpha' 
   params:
-    model_paths: '["checkpoints/Wan2.1-T2V-1.3B/models_t5_umt5-xxl-enc-bf16.pth","checkpoints/Wan2.1-T2V-1.3B/Wan2.1_VAE.pth"]'
+    model_paths: '["checkpoints/Wan2.1-T2V-14B/models_t5_umt5-xxl-enc-bf16.pth","checkpoints/Wan2.1-T2V-14B/Wan2.1_VAE.pth"]'
     lora_base_model: "dit"
     lora_target_modules: "self_attn.q,self_attn.k,self_attn.v,self_attn.o,ffn.0,ffn.2"
     lora_rank: 32
