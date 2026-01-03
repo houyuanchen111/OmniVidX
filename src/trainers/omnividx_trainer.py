@@ -8,7 +8,7 @@ from accelerate.state import AcceleratorState
 import os
 from ..trainers.util import Callback
 from torchvision.io import write_video
-class ModelCheckpointCallback_OmnividAlpha(Callback):     
+class ModelCheckpointCallback(Callback):     
     """
     checkpoint callback
     """
@@ -64,7 +64,7 @@ class ModelCheckpointCallback_OmnividAlpha(Callback):
             self._save_trainable_weights(trainer, epoch_checkpoint_dir)
             print("Checkpoint directory is ready. Starting to save state...")
 
-class TensorboardLoggingCallback_OmnividAlpha(Callback):    
+class TensorboardLoggingCallback(Callback):    
     """tensorboard callback"""
     def __init__(self, logging_dir=None, hps=None):
         self.logging_dir = logging_dir
@@ -94,7 +94,7 @@ class TensorboardLoggingCallback_OmnividAlpha(Callback):
     def on_train_end(self, trainer):
         pass
 
-class Trainer_OmnividAlpha:
+class Trainer:
     def __init__(
             self, 
             model, 

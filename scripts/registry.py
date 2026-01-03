@@ -9,7 +9,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from src.pipelines.omnivid_alpha import OmniVidAlpha
 from src.pipelines.omnivid_intrinsic import OmniVidIntrinsic
-from src.trainers.omnivid_alpha_trainer import ModelCheckpointCallback_OmnividAlpha, TensorboardLoggingCallback_OmnividAlpha, Trainer_OmnividAlpha
+from src.trainers.omnividx_trainer import ModelCheckpointCallback, TensorboardLoggingCallback, Trainer
 
 DATASET_REGISTRY = {
 
@@ -30,12 +30,12 @@ SCHEDULER_REGISTRY = {
 }
 
 CALLBACK_REGISTRY = {
-    'ModelCheckpointCallback_OmnividAlpha': ModelCheckpointCallback_OmnividAlpha,
-    'TensorboardLoggingCallback_OmnividAlpha': TensorboardLoggingCallback_OmnividAlpha,
+    'ModelCheckpointCallback': ModelCheckpointCallback,
+    'TensorboardLoggingCallback': TensorboardLoggingCallback,
 }   
 
 
 TRAINER_REGISTRY = {
-    'Trainer_OmnividAlpha': Trainer_OmnividAlpha,
+    'Trainer': Trainer,
 }
 
