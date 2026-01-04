@@ -10,7 +10,7 @@ inference_irradiance_path: null
 
 inference_normal_path: null
 
-prompt: "一只大熊猫直立坐着，双手捧着一根竹子，满足地咀嚼着。背景为：四川山区茂密、多雾的竹林，天空飘着蒙蒙细雨。"
+prompt: "一只小刺猬，穿着白色小围裙，头上戴着厨师帽，正站在小凳子上，双手举着一个小平底锅，锅里冒着热气，表情专注而自豪，位于一个现代化的迷你厨房中，不锈钢台面反射着明亮的光线，各种小厨具整齐地排列着, 镜头从右向左移动。"  
 
 model:
   name: 'OmniVidIntrinsic' 

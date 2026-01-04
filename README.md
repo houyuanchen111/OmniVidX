@@ -70,17 +70,18 @@ We use YAML files to centrally manage inference parameters. Below are the config
 # configs/omnivid_intrinsic_inference.yaml
 
 experiment_name: "omnivid_intrinsic_inference"   # Output folder name
-mode: "R2AIN"                                    # Task Mode (One of the 15 supported tasks)
+mode: "t2RAIN"                                   # Task Mode (One of the 15 supported tasks)
 
 # --- Conditional Inputs ---
 # Configure paths based on your chosen 'mode'. Set unused inputs to null.
-inference_rgb_path: "./assets/R2AIN/rgb.mp4"
+inference_rgb_path: null
 inference_albedo_path: null
 inference_irradiance_path: null
 inference_normal_path: null
 
 # --- Text Prompt ---
-prompt: ""  
+# We recommend using Chinese prompts.
+prompt: "一只小刺猬，穿着白色小围裙，头上戴着厨师帽，正站在小凳子上，双手举着一个小平底锅，锅里冒着热气，表情专注而自豪，位于一个现代化的迷你厨房中，不锈钢台面反射着明亮的光线，各种小厨具整齐地排列着, 镜头从右向左移动。"  
 
 # --- Model Settings ---
 model:
@@ -103,18 +104,18 @@ model:
 # configs/omnivid_alpha_inference.yaml
 
 experiment_name: "omnivid_alpha_inference"   # Output folder name
-mode: "t2RPFB"                               # Task Mode (One of the 15 supported tasks)
+mode: "R2PFB"                                # Task Mode (One of the 15 supported tasks)
 
 
 # --- Conditional Inputs ---
 # Configure paths based on your chosen 'mode'. Set unused inputs to null.
-inference_rgb_path: null
+inference_rgb_path: "./assets/R2PFB/bl.mp4"
 inference_pha_path: null
 inference_fgr_path: null
 inference_bgr_path: null
 
 # --- Text Prompt ---
-prompt: "一只大熊猫直立坐着，双手捧着一根竹子，满足地咀嚼着。背景为：四川山区茂密、多雾的竹林，天空飘着蒙蒙细雨。"
+prompt: ""
 
 # --- Model Settings ---
 model:
@@ -131,7 +132,7 @@ model:
     lora_modalities: ["com", "pha", "fgr", "bgr"]
 ```
 
-然后，你可以使用配置好的yaml文件进行inference
+Once your YAML configuration is ready, run the corresponding inference script:
 ```bash
 # omnivid_alpha_inference
 python scripts/inference_omnivid_alpha.py --config configs/omnivid_alpha_inference.yaml
@@ -139,6 +140,8 @@ python scripts/inference_omnivid_alpha.py --config configs/omnivid_alpha_inferen
 # omnivid_intrinsic_inference
 python scripts/inference_omnivid_intrinsic.py --config configs/omnivid_intrinsic_inference.yaml
 ```
+
+
 ## 🏋️ Training
 
 To train OmniVidX on your own dataset, format the data as follows:
