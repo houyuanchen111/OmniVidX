@@ -423,7 +423,7 @@ class WanVideoPipeline(BasePipeline):
         pipe.dit.to(dtype=torch_dtype, device=device)
         state_dict = {}
         for i in range(1,7):
-            ckpt_path = f"checkpoints/Wan2.1-T2V-14B/diffusion_pytorch_model-0000{i}-of-00006.safetensors"
+            ckpt_path = f"models/Wan-AI/Wan2.1-T2V-14B/diffusion_pytorch_model-0000{i}-of-00006.safetensors"
             state_dict.update(load_file(ckpt_path))
         incompatible = pipe.dit.load_state_dict(state_dict, strict=False)
         missing_keys = list(getattr(incompatible, "missing_keys", []))
@@ -1311,7 +1311,7 @@ class OmniVidAlpha(DiffusionTrainingModule):
         if model_id_with_origin_paths is not None:
             model_id_with_origin_paths = model_id_with_origin_paths.split(",")
             model_configs += [ModelConfig(model_id=i.split(":")[0], origin_file_pattern=i.split(":")[1]) for i in model_id_with_origin_paths]
-        tokenizer_config = ModelConfig(path="checkpoints/Wan2.1-T2V-14B/google/umt5-xxl")
+        tokenizer_config = ModelConfig(path="models/Wan-AI/Wan2.1-T2V-14B/google/umt5-xxl")
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
         

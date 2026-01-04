@@ -22,14 +22,12 @@ now = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def _tensor2video(tensor: torch.Tensor, file_path: str, fps: int = 15):
-    """将张量保存为视频文件。期望张量为 (C,T,H,W) 且范围 [0,1]。"""
     assert tensor.ndim == 4, "tensor must be [c,t,h,w]"
     tensor = tensor.detach().cpu()
     video_tensor = tensor.permute(1, 2, 3, 0)  # c t h w -> t h w c
     video_tensor = (video_tensor.clamp(0, 1) * 255).to(torch.uint8)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     try:
-        from torchvision.io import write_video
         write_video(
             filename=file_path,
             video_array=video_tensor,
@@ -37,7 +35,8 @@ def _tensor2video(tensor: torch.Tensor, file_path: str, fps: int = 15):
             video_codec='h264',
         )
     except Exception as e:
-        print(f"视频保存失败: {file_path}, error: {e}")
+        print(f"Failed to save video: {file_path}, error: {e}")
+
 
 def _load_mp4_as_video_tensor(
     mp4_path: str,
@@ -52,13 +51,17 @@ def _load_mp4_as_video_tensor(
     if video.numel() == 0:
         raise ValueError(f"Empty video: {mp4_path}")
     if video.ndim != 4 or video.shape[-1] != 3:
-        raise ValueError(f"Unexpected video shape {tuple(video.shape)} for {mp4_path}; expected [T,H,W,3]")
+        raise ValueError(
+            f"Unexpected video shape {tuple(video.shape)} for {mp4_path}; expected [T,H,W,3]"
+        )
 
     video = video.to(torch.float32) / 255.0
     video = video.permute(0, 3, 1, 2)  # T,H,W,3 -> T,3,H,W
 
     if (video.shape[-2] != height) or (video.shape[-1] != width):
-        video = F.interpolate(video, size=(height, width), mode="bilinear", align_corners=False)
+        video = F.interpolate(
+            video, size=(height, width), mode="bilinear", align_corners=False
+        )
 
     T = video.shape[0]
     if T >= num_frames:
@@ -73,43 +76,44 @@ def _load_mp4_as_video_tensor(
     return video
 
 
-
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default="configs/wan2_1_14b_t2v_pbr_lora_video_pbrgeneration_inference_v7_new_new_AIN2R.yaml", help='YAML 配置文件路径')
+    parser.add_argument(
+        '--config',
+        type=str,
+        default="configs/wan2_1_14b_t2v_pbr_lora_video_pbrgeneration_inference_v7_new_new_AIN2R.yaml",
+        help='Path to the YAML configuration file'
+    )
     args = parser.parse_args()
 
-    # 加载配置
     with open(args.config, 'r') as f:
         config = yaml.safe_load(f)
-
 
     mode = config["mode"]
     inference_rgb_path = config.get("inference_rgb_path", None)
     inference_albedo_path = config.get("inference_albedo_path", None)
     inference_irradiance_path = config.get("inference_irradiance_path", None)
     inference_normal_path = config.get("inference_normal_path", None)
-    
+
     prompt = config.get("prompt", "")
-    # 构建模型
+
     model_class = MODEL_REGISTRY[config['model']['name']]
     model = model_class(**config['model']['params'])
-    print(f"✅ 模型 '{config['model']['name']}' 已创建")
+    print(f"✅ Model '{config['model']['name']}' has been created")
 
-    # 设置模型为评估模式
     model.eval()
-    print("✅ 模型已设置为评估模式")
+    print("✅ Model set to evaluation mode")
 
-    # 设置推理参数
     inference_params = {
         "negative_prompt":"色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
         "seed": 1,
         "num_inference_steps": 50,
         "cfg_scale": 5.0,
         "cfg_merge": False,
+        # We recommend keeping the following three parameters unchanged for best results.
         "height": 480,
         "width": 640,
-        "num_frames": 21,  # 改为21帧
+        "num_frames": 21,
         "denoising_strength": 1.0,
         "tiled": True,
         "tile_size": [30, 52],
@@ -120,9 +124,10 @@ def main():
         "inference_irradiance": None,
         "inference_normal": None,
         "training_mode": mode,
-}    
+    }
+
     if inference_rgb_path:
-        rgb_video = _load_mp4_as_video_tensor(
+        inference_params["inference_rgb"] = _load_mp4_as_video_tensor(
             inference_rgb_path,
             num_frames=inference_params["num_frames"],
             height=inference_params["height"],
@@ -130,9 +135,9 @@ def main():
             device=torch.device(model.pipe.device),
             dtype=model.pipe.torch_dtype,
         )
-        inference_params["inference_rgb"] = rgb_video
+
     if inference_albedo_path:
-        alb_video = _load_mp4_as_video_tensor(
+        inference_params["inference_albedo"] = _load_mp4_as_video_tensor(
             inference_albedo_path,
             num_frames=inference_params["num_frames"],
             height=inference_params["height"],
@@ -140,9 +145,9 @@ def main():
             device=torch.device(model.pipe.device),
             dtype=model.pipe.torch_dtype,
         )
-        inference_params["inference_albedo"] = alb_video
+
     if inference_irradiance_path:
-        irr_video = _load_mp4_as_video_tensor(
+        inference_params["inference_irradiance"] = _load_mp4_as_video_tensor(
             inference_irradiance_path,
             num_frames=inference_params["num_frames"],
             height=inference_params["height"],
@@ -150,9 +155,9 @@ def main():
             device=torch.device(model.pipe.device),
             dtype=model.pipe.torch_dtype,
         )
-        inference_params["inference_irradiance"] = irr_video
+
     if inference_normal_path:
-        nor_video = _load_mp4_as_video_tensor(
+        inference_params["inference_normal"] = _load_mp4_as_video_tensor(
             inference_normal_path,
             num_frames=inference_params["num_frames"],
             height=inference_params["height"],
@@ -160,37 +165,42 @@ def main():
             device=torch.device(model.pipe.device),
             dtype=model.pipe.torch_dtype,
         )
-        inference_params["inference_normal"] = nor_video
 
-    # 创建输出目录
     output_path = f"results/{config['experiment_name']}/inference_results_{now}"
     os.makedirs(output_path, exist_ok=True)
-    print(f"✅ 输出目录: {output_path}")
+    print(f"✅ Output directory: {output_path}")
 
-    # 开始推理
-    print("\n--- 开始推理！ ---")
+    print("\n--- Starting inference ---")
     with torch.no_grad():
-        inference_params["prompt"] = [
-            prompt,
-            prompt,
-            prompt,
-            prompt
-        ]
+        inference_params["prompt"] = [prompt, prompt, prompt, prompt]
         video_dict = model.pipe(**inference_params)
+
         if not inference_rgb_path:
-            rgb_gen = video_dict["rgb"]  # [C, T, H, W]
-            _tensor2video(rgb_gen * 0.5 + 0.5, f"{output_path}/inference/rgb_gen.mp4")
+            _tensor2video(
+                video_dict["rgb"] * 0.5 + 0.5,
+                f"{output_path}/inference/rgb_gen.mp4"
+            )
+
         if not inference_albedo_path:
-            albedo_gen = video_dict["albedo"]
-            _tensor2video(albedo_gen * 0.5 + 0.5, f"{output_path}/inference/albedo_gen.mp4")
+            _tensor2video(
+                video_dict["albedo"] * 0.5 + 0.5,
+                f"{output_path}/inference/albedo_gen.mp4"
+            )
+
         if not inference_irradiance_path:
-            irradiance_gen = video_dict["irradiance"]
-            _tensor2video(irradiance_gen * 0.5 + 0.5, f"{output_path}/inference/irradiance_gen.mp4")
+            _tensor2video(
+                video_dict["irradiance"] * 0.5 + 0.5,
+                f"{output_path}/inference/irradiance_gen.mp4"
+            )
+
         if not inference_normal_path:
-            normal_gen = video_dict["normal_unit"]
-            _tensor2video(normal_gen * 0.5 + 0.5, f"{output_path}/inference/normal_gen.mp4")
-                
-    print(f"\n--- 推理完成！输出目录: {output_path}")
+            _tensor2video(
+                video_dict["normal_unit"] * 0.5 + 0.5,
+                f"{output_path}/inference/normal_gen.mp4"
+            )
+
+    print(f"\n--- Inference completed! Output directory: {output_path}")
+
 
 if __name__ == "__main__":
     main()
