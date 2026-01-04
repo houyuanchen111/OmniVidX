@@ -267,7 +267,7 @@ Different tasks can be combined to enable interesting applications. For example:
         </tr>
         <tr>
           <td style="text-align: center; font-weight: bold;">
-            Prompt: "带着墨镜，穿粉色西服的男人..."<br>PB2RF
+            Prompt: "带墨镜，穿粉色西装..."<br>PB2RF
           </td>
         </tr>
       </table>
