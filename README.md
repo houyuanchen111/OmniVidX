@@ -307,4 +307,4 @@ If you find this work useful, please cite:
 
 ## 📝 Acknowledgements
 
-This work is built on [DiffSynth-Studio](https://github.com/modelscope/DiffSynth-Studio). Thanks all the authors for their excellent contributions!
+Code is built on [DiffSynth-Studio](https://github.com/modelscope/DiffSynth-Studio). Thanks all the authors for their excellent contributions!
