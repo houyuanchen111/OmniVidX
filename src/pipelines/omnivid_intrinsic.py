@@ -403,7 +403,7 @@ class WanVideoPipeline(BasePipeline):
         torch_dtype: torch.dtype = torch.bfloat16,
         device: Union[str, torch.device] = "cuda",
         model_configs: list[ModelConfig] = [],
-        tokenizer_config: ModelConfig = ModelConfig(model_id="Wan-AI/Wan2.1-T2V-1.3B", origin_file_pattern="google/*"),
+        tokenizer_config: ModelConfig = ModelConfig(model_id="Wan-AI/Wan2.1-T2V-14B", origin_file_pattern="google/*"),
         local_model_path: str = "./models",
         skip_download: bool = False,
         redirect_common_files: bool = True,
@@ -411,8 +411,8 @@ class WanVideoPipeline(BasePipeline):
     ):
         if redirect_common_files:
             redirect_dict = {
-                "models_t5_umt5-xxl-enc-bf16.pth": "Wan-AI/Wan2.1-T2V-1.3B",
-                "Wan2.1_VAE.pth": "Wan-AI/Wan2.1-T2V-1.3B",
+                "models_t5_umt5-xxl-enc-bf16.pth": "Wan-AI/Wan2.1-T2V-14B",
+                "Wan2.1_VAE.pth": "Wan-AI/Wan2.1-T2V-14B",
                 # "models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth": "Wan-AI/Wan2.1-I2V-14B-480P",
             }
             for model_config in model_configs:
@@ -1362,7 +1362,7 @@ class OmniVidIntrinsic(DiffusionTrainingModule):
         if model_id_with_origin_paths is not None:
             model_id_with_origin_paths = model_id_with_origin_paths.split(",")
             model_configs += [ModelConfig(model_id=i.split(":")[0], origin_file_pattern=i.split(":")[1]) for i in model_id_with_origin_paths]
-        tokenizer_config = ModelConfig(path="checkpoints/Wan2.1-T2V-1.3B/google/umt5-xxl")
+        tokenizer_config = ModelConfig(path="checkpoints/Wan2.1-T2V-14B/google/umt5-xxl")
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
         print(f"Using device: {device}")
