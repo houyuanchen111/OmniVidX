@@ -1362,7 +1362,7 @@ class OmniVidIntrinsic(DiffusionTrainingModule):
         if model_id_with_origin_paths is not None:
             model_id_with_origin_paths = model_id_with_origin_paths.split(",")
             model_configs += [ModelConfig(model_id=i.split(":")[0], origin_file_pattern=i.split(":")[1]) for i in model_id_with_origin_paths]
-        tokenizer_config = ModelConfig(path="checkpoints/Wan2.1-T2V-14B/google/umt5-xxl")
+        tokenizer_config = ModelConfig(path="models/Wan-AI/Wan2.1-T2V-14B/google/umt5-xxl")
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
         print(f"Using device: {device}")

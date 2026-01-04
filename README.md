@@ -13,12 +13,10 @@ TODO
 ---
 
 ## 🚀 News
-- **[2026/05/15]** Initial release of **OmniVid-In** and 
+- **[2026/05/15]** Initial release of **OmniVidX**.
 ---
 
 ## 🛠️ Installation
-
-
 
 ```bash
 # Clone the repository
@@ -29,48 +27,107 @@ cd OmniVidX
 conda create -n omnividx python=3.10
 conda activate omnividx
 
-# Install dependencies (requires CUDA 12.1+)
+# Install dependencies
 pip install -r requirements.txt
 ```
 
 ## 🤖 Model Zoo
 
-Download checkpoints manually from Hugging Face or let the scripts auto-download them.
+You can download the weights of backbone Wan2.1-T2V-14B from either **ModelScope** or **Hugging Face**.
 
-| Model Name        | Modalities     | Task Focus                      | Backbone     | Size | Link |
-|------------------|----------------|----------------------------------|--------------|------|------|
-| OmniVid-Intrinsic | R, A, I, N     | Inverse Rendering, Relighting    | Wan2.1-14B   | 28GB | 🤗 Download |
-| OmniVid-Alpha     | R, P, F, B     | Matting, Composition             | Wan2.1-14B   | 28GB | 🤗 Download |
+**Option 1: ModelScope**
+```bash
+pip install modelscope
+mkdir -p ./checkpoints/Wan-AI
+modelscope download Wan-AI/Wan2.1-T2V-14B --local_dir ./checkpoints/Wan-AI/Wan2.1-T2V-14B
+```
 
-**Note:**
+**Option 2: Hugging Face**
+```bash
+pip install "huggingface_hub[cli]"
+mkdir -p ./models/Wan-AI
+huggingface-cli download Wan-AI/Wan2.1-T2V-14B --local-dir ./models/Wan-AI/Wan2.1-T2V-14B
+```
 
-- R = RGB  
-- A = Albedo  
-- I = Irradiance  
-- N = Normal  
-- P = Alpha  
-- F = Foreground  
-- B = Background  
+Then, download checkpoints of **OmniVid-Intrinsic** and **OmniVid-Alpha** manually from Hugging Face or let the scripts auto-download them.
 
+| Model Name | Link |
+| :--- | :--- |
+| OmniVid-Intrinsic | 🤗 Download |
+| OmniVid-Alpha | 🤗 Download |
+
+```bash
+TODO
+```
 ---
 
 ## 💻 Inference
+我们使用yaml文件来配置推理参数，
 
-We provide a unified inference script `inference.py` supporting **30 sub-tasks** via the `--task` argument.
+```yaml
+# OmniVid-Intrinsic
 
-### 1. Inverse Rendering  
-**RGB → Albedo + Irradiance + Normal**
+experiment_name: "omnivid_intrinsic_inference"   # Name for the output folder
+mode: "R2AIN" # OmniVid-Intrinsic 支持的十五个任务之一
 
-```bash
-python inference.py \
-  --model_path checkpoints/OmniVid-Intrinsic \
-  --task R2AIN \
-  --input_video assets/input_rgb.mp4 \
-  --output_dir outputs/inverse_rendering \
-  --resolution 480 640 \
-  --frames 21
+# Conditional Inputs (Optional)，根据不同任务来配置
+inference_rgb_path: "./assets/R2AIN/rgb.mp4"
+inference_albedo_path: null
+inference_irradiance_path: null
+inference_normal_path: null
+
+# prompt 
+prompt: ""
+
+# Model Configuration
+model:
+  name: 'OmniVidIntrinsic' 
+  params:
+    model_paths: '["models/Wan-AI/Wan2.1-T2V-14B/models_t5_umt5-xxl-enc-bf16.pth","models/Wan-AI/Wan2.1-T2V-14B/Wan2.1_VAE.pth"]'
+    resume_from_checkpoint: "checkpoints/omnivid_intrinsic.safetensors"
+    lora_base_model: "dit"
+    lora_target_modules: "self_attn.q,self_attn.k,self_attn.v,self_attn.o,ffn.0,ffn.2"
+    lora_rank: 32
+    lora_modalities: ["rgb","albedo","irradiance","normal"] # decoupled LoRA的名字
 ```
 
+```yaml
+# OmniVid-Alpha
+
+experiment_name: "omnivid_alpha_inference"   
+
+mode: "t2RPFB"
+
+inference_rgb_path: null
+
+inference_pha_path: null
+
+inference_fgr_path: null
+
+inference_bgr_path: null
+
+prompt: "一只大熊猫直立坐着，双手捧着一根竹子，满足地咀嚼着。背景为：四川山区茂密、多雾的竹林，天空飘着蒙蒙细雨。"
+
+model:
+  name: 'OmniVidAlpha' 
+  params:
+    model_paths: '["models/Wan-AI/Wan2.1-T2V-14B/models_t5_umt5-xxl-enc-bf16.pth","models/Wan-AI/Wan2.1-T2V-14B/Wan2.1_VAE.pth"]'
+    lora_base_model: "dit"
+    lora_target_modules: "self_attn.q,self_attn.k,self_attn.v,self_attn.o,ffn.0,ffn.2"
+    lora_rank: 32
+    lora_modalities: ["com","pha","fgr","bgr"] 
+    resume_from_checkpoint: "checkpoints/omnivid_alpha.safetensors"
+```
+
+然后，你可以使用配置好的yaml文件进行inference
+```bash
+# omnivid_alpha_inference
+python scripts/inference_omnivid_alpha.py --config configs/omnivid_alpha_inference.yaml
+
+# omnivid_intrinsic_inference
+python scripts/inference_omnivid_intrinsic.py --config configs/omnivid_intrinsic_inference.yaml
+
+```
 ## 🏋️ Training
 
 To train OmniVidX on your own dataset, format the data as follows:
