@@ -238,30 +238,22 @@ More applications await your exploration.
 ---
 
 ## 🏋️ Training
-To train OmniVidX on your own dataset, format the data as follows:
+我们使用accelerate来训练模型。训练的yaml文件在configs/omnivid_intrinsic_train.yaml和configs/omnivid_alpha_train.yaml中
+启动命令是
+```bash
+# OmniVid-Intrinsic
+accelerate launch \
+    --config_file "configs/accelerate_config.yaml" \
+    "scripts/train.py" \
+    --config "configs/omnivid_intrinsic_train.yaml"     
+# OmniVid-Alpha
+accelerate launch \
+    --config_file "configs/accelerate_config.yaml" \
+    "scripts/train.py" \
+    --config "configs/omnivid_alpha_train.yaml"     
 
-dataset/
-├── videos/
-│   ├── 00001_rgb.mp4
-│   ├── 00001_albedo.mp4
-│   ├── 00001_normal.mp4
-│   └── ...
-└── meta.json   # prompts and file paths
+```
 
-Running Training
-
-Training uses Accelerate and enables Stochastic Condition Masking (SCM) by default.
-
-accelerate launch train.py \
-  --config configs/train_intrinsic.yaml \
-  --pretrained_model_path Wan2.1-T2V-14B \
-  --data_path ./dataset \
-  --output_dir ./checkpoints/my_experiment \
-  --train_batch_size 1 \
-  --gradient_accumulation_steps 4 \
-  --use_sc_masking True \
-  --lora_rank 32
----
 
 ## 📊 Citation
 
