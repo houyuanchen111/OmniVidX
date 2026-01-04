@@ -1,14 +1,12 @@
 # OmniVidX: Omni-directional Video Generation in One Diffusion Model
 
 <div align="center">
-  <img src="assets/teaser_github.gif" width="800px" alt="OmniVidX Teaser">
+  <img src="assets/teaser.png" width="800px" alt="OmniVidX Teaser">
   <br>
-  <strong>SIGGRAPH 2026 (Anonymous Submission)</strong>
 </div>
 
----
 
-## 📖 Introduction
+## 📖 O
 
 **OmniVidX** is a unified framework enabling **cross-modal any-to-any video generation** within a **single diffusion model**.  
 Built upon the **Wan2.1-T2V-14B** backbone, it unifies diverse video generation and editing tasks into a **shared multimodal latent space**, including:
@@ -89,62 +87,8 @@ python inference.py \
   --resolution 480 640 \
   --frames 21
 ```
-💻 Inference
 
-We provide a unified inference script inference.py supporting 30 sub-tasks via the --task argument.
-
-1. Inverse Rendering
-
-RGB → Albedo + Irradiance + Normal
-
-python inference.py \
-  --model_path checkpoints/OmniVid-Intrinsic \
-  --task R2AIN \
-  --input_video assets/input_rgb.mp4 \
-  --output_dir outputs/inverse_rendering \
-  --resolution 480 640 \
-  --frames 21
-
-2. Video Matting
-
-RGB → Alpha + Foreground + Background
-
-python inference.py \
-  --model_path checkpoints/OmniVid-Alpha \
-  --task R2PFB \
-  --input_video assets/human_dance.mp4 \
-  --prompt "a dancer in a studio" \
-  --output_dir outputs/matting
-
-3. Text-to-All Generation
-
-Generate all modalities from scratch using a text prompt.
-
-python inference.py \
-  --model_path checkpoints/OmniVid-Intrinsic \
-  --task t2RAIN \
-  --prompt "A golden statue in a dark cave, cinematic lighting" \
-  --seed 42
-
-4. Custom Combination (Advanced)
-
-Manually specify input and output modalities for flexible editing.
-
-# Example: Retexturing
-# Keep Normal + Irradiance, generate RGB + Albedo
-python inference.py \
-  --model_path checkpoints/OmniVid-Intrinsic \
-  --condition_modalities normal irradiance \
-  --target_modalities rgb albedo \
-  --input_video assets/source.mp4
-
-📦 Gradio Demo
-
-Launch an interactive web demo for side-by-side visualization:
-
-python app.py --server_port 7860
-
-🏋️ Training
+## 🏋️ Training
 
 To train OmniVidX on your own dataset, format the data as follows:
 
