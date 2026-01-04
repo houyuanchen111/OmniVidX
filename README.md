@@ -15,7 +15,7 @@
 <div>
 <div align="center">
     <sup>1</sup>MMLab, HKUST, &emsp;
-    <sup>2</sup>Behang University&emsp;
+    <sup>2</sup>Beihang University&emsp;
     <sup>3</sup>Nanjing University&emsp;
     <sup>4</sup>CUHK&emsp;
     <sup>5</sup>FNii, CUHKSZ&emsp;
