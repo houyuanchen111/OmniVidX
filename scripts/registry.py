@@ -12,7 +12,7 @@ from src.pipelines.omnivid_intrinsic import OmniVidIntrinsic
 from src.trainers.omnividx_trainer import ModelCheckpointCallback, TensorboardLoggingCallback, Trainer
 
 DATASET_REGISTRY = {
-
+    # register your dataset here
 }
 
 

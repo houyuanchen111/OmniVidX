@@ -236,6 +236,7 @@ Different tasks can be combined to enable interesting applications. For example:
 More applications await your exploration.
 
 ---
+
 ## 🏋️ Training
 To train OmniVidX on your own dataset, format the data as follows:
 
@@ -261,18 +262,15 @@ accelerate launch train.py \
   --use_sc_masking True \
   --lora_rank 32
 ---
+
 ## 📊 Citation
 
 If you find this work useful, please cite:
 
-@inproceedings{omnividx2026,
-  title     = {OmniVidX: Omni-directional Video Generation in One Diffusion Model},
-  author    = {Anonymous Author(s)},
-  booktitle = {SIGGRAPH},
-  year      = {2026}
-}
+```bibtex
+TODO
+```
 
-📝 Acknowledgements
+## 📝 Acknowledgements
 
-This codebase is built upon Wan2.1 and Diffusers.
-We thank the authors for their open-source contributions.
+This work is built on [DiffSynth-Studio](https://github.com/modelscope/DiffSynth-Studio). Thanks all the authors for their excellent contributions!
