@@ -81,7 +81,7 @@ def main():
     parser.add_argument(
         '--config',
         type=str,
-        default="configs/wan2_1_14b_t2v_pbr_lora_video_pbrgeneration_inference_v7_new_new_AIN2R.yaml",
+        default="configs/omnivid_intrinsic_inference.yaml",
         help='Path to the YAML configuration file'
     )
     args = parser.parse_args()
