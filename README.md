@@ -6,31 +6,14 @@
 </div>
 
 
-## 📖 O
+## 📖 Overview
 
-**OmniVidX** is a unified framework enabling **cross-modal any-to-any video generation** within a **single diffusion model**.  
-Built upon the **Wan2.1-T2V-14B** backbone, it unifies diverse video generation and editing tasks into a **shared multimodal latent space**, including:
-
-- Text-to-video  
-- Inverse rendering  
-- Forward rendering  
-- Video matting  
-- Relighting  
-
-
-This repository contains the **official PyTorch implementation**, **pretrained checkpoints**, and **inference scripts** for:
-
-- **OmniVid-Intrinsic**: RGB ↔ Albedo, Irradiance, Normal  
-- **OmniVid-Alpha**: RGB ↔ Foreground, Background, Alpha  
+TODO
 
 ---
 
 ## 🚀 News
-
-- **[2026/05/20]** Release of the **OmniVid-Alpha** checkpoint (Video Matting focus)  
-- **[2026/05/15]** Initial release of **OmniVid-Intrinsic** and inference code  
-- **[2026/05/01]** Paper submitted to **SIGGRAPH 2026**
-
+- **[2026/05/15]** Initial release of **OmniVid-In** and 
 ---
 
 ## 🛠️ Installation
