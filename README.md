@@ -199,12 +199,12 @@ Different tasks can be combined to enable interesting applications. For example:
     <td style="border: none; vertical-align: top;">
       <table>
         <tr>
-          <td><video src="assets/video_editing/rgb_gen.gif" width="100%" controls></video></td>
-          <td><video src="assets/video_editing/albedo_gen.gif" width="100%" controls></video></td>
+          <td><img src="assets/video_editing/rgb_gen.gif" width="100%"></td>
+          <td><img src="assets/video_editing/albedo_gen.gif" width="100%"></td>
         </tr>
         <tr>
-          <td><video src="assets/video_editing/irradiance_gen.gif" width="100%" controls></video></td>
-          <td><video src="assets/video_editing/normal_gen.gif" width="100%" controls></video></td>
+          <td><img src="assets/video_editing/irradiance_gen.gif" width="100%"></td>
+          <td><img src="assets/video_editing/normal_gen.gif" width="100%"></td>
         </tr>
         <tr>
           <td colspan="2" style="text-align: center; font-weight: bold;">
@@ -219,10 +219,10 @@ Different tasks can be combined to enable interesting applications. For example:
     <td style="border: none; vertical-align: top;">
       <table>
         <tr>
-          <td><video src="assets/video_editing/rgb_edit.gif" width="100%" controls></video></td>
+          <td><img src="assets/video_editing/rgb_edit.gif" width="100%"></td>
         </tr>
         <tr>
-          <td><video src="assets/video_editing/albedo_edit.gif" width="100%" controls></video></td>
+          <td><img src="assets/video_editing/albedo_edit.gif" width="100%"></td>
         </tr>
         <tr>
           <td style="text-align: center; font-weight: bold;">
@@ -240,12 +240,12 @@ Different tasks can be combined to enable interesting applications. For example:
     <td style="border: none; vertical-align: top;">
       <table>
         <tr>
-          <td><video src="assets/video_inpainting/input_bl.gif" width="100%" controls></video></td>
-          <td><video src="assets/video_inpainting/alpha.gif" width="100%" controls></video></td>
+          <td><img src="assets/video_inpainting/input_bl.gif" width="100%"></td>
+          <td><img src="assets/video_inpainting/alpha.gif" width="100%"></td>
         </tr>
         <tr>
-          <td><video src="assets/video_inpainting/fg.gif" width="100%" controls></video></td>
-          <td><video src="assets/video_inpainting/bg.gif" width="100%" controls></video></td>
+          <td><img src="assets/video_inpainting/fg.gif" width="100%"></td>
+          <td><img src="assets/video_inpainting/bg.gif" width="100%"></td>
         </tr>
         <tr>
           <td colspan="2" style="text-align: center; font-weight: bold;">
@@ -260,10 +260,10 @@ Different tasks can be combined to enable interesting applications. For example:
     <td style="border: none; vertical-align: top;">
       <table>
         <tr>
-          <td><video src="assets/video_inpainting/repaint_bl.gif" width="100%" controls></video></td>
+          <td><img src="assets/video_inpainting/repaint_bl.gif" width="100%"></td>
         </tr>
         <tr>
-          <td><video src="assets/video_inpainting/repaint_fg.gif" width="100%" controls></video></td>
+          <td><img src="assets/video_inpainting/repaint_fg.gif" width="100%"></td>
         </tr>
         <tr>
           <td style="text-align: center; font-weight: bold;">
