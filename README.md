@@ -62,61 +62,73 @@ TODO
 ---
 
 ## 💻 Inference
-我们使用yaml文件来配置推理参数，
+We use YAML files to centrally manage inference parameters. Below are the configuration templates for **OmniVid-Intrinsic** and **OmniVid-Alpha**.
+
+#### OmniVid-Intrinsic
 
 ```yaml
-# OmniVid-Intrinsic
+# configs/omnivid_intrinsic_inference.yaml
 
-experiment_name: "omnivid_intrinsic_inference"   # Name for the output folder
-mode: "R2AIN" # OmniVid-Intrinsic 支持的十五个任务之一
+experiment_name: "omnivid_intrinsic_inference"   # Output folder name
+mode: "R2AIN"                                    # Task Mode (One of the 15 supported tasks)
 
-# Conditional Inputs (Optional)，根据不同任务来配置
+# --- Conditional Inputs ---
+# Configure paths based on your chosen 'mode'. Set unused inputs to null.
 inference_rgb_path: "./assets/R2AIN/rgb.mp4"
 inference_albedo_path: null
 inference_irradiance_path: null
 inference_normal_path: null
 
-# prompt 
-prompt: ""
+# --- Text Prompt ---
+prompt: ""  
 
-# Model Configuration
+# --- Model Settings ---
 model:
   name: 'OmniVidIntrinsic' 
   params:
-    model_paths: '["models/Wan-AI/Wan2.1-T2V-14B/models_t5_umt5-xxl-enc-bf16.pth","models/Wan-AI/Wan2.1-T2V-14B/Wan2.1_VAE.pth"]'
+    # Path to Wan2.1 Backbone
+    model_paths: '["models/Wan-AI/Wan2.1-T2V-14B/models_t5_umt5-xxl-enc-bf16.pth", "models/Wan-AI/Wan2.1-T2V-14B/Wan2.1_VAE.pth"]'
     resume_from_checkpoint: "checkpoints/omnivid_intrinsic.safetensors"
+    
+    # LoRA Configuration
     lora_base_model: "dit"
     lora_target_modules: "self_attn.q,self_attn.k,self_attn.v,self_attn.o,ffn.0,ffn.2"
     lora_rank: 32
-    lora_modalities: ["rgb","albedo","irradiance","normal"] # decoupled LoRA的名字
+    lora_modalities: ["rgb", "albedo", "irradiance", "normal"]
 ```
 
+#### OmniVid-Alpha
+
 ```yaml
-# OmniVid-Alpha
+# configs/omnivid_alpha_inference.yaml
 
-experiment_name: "omnivid_alpha_inference"   
+experiment_name: "omnivid_alpha_inference"   # Output folder name
+mode: "t2RPFB"                               # Task Mode (One of the 15 supported tasks)
 
-mode: "t2RPFB"
 
+# --- Conditional Inputs ---
+# Configure paths based on your chosen 'mode'. Set unused inputs to null.
 inference_rgb_path: null
-
 inference_pha_path: null
-
 inference_fgr_path: null
-
 inference_bgr_path: null
 
+# --- Text Prompt ---
 prompt: "一只大熊猫直立坐着，双手捧着一根竹子，满足地咀嚼着。背景为：四川山区茂密、多雾的竹林，天空飘着蒙蒙细雨。"
 
+# --- Model Settings ---
 model:
   name: 'OmniVidAlpha' 
   params:
-    model_paths: '["models/Wan-AI/Wan2.1-T2V-14B/models_t5_umt5-xxl-enc-bf16.pth","models/Wan-AI/Wan2.1-T2V-14B/Wan2.1_VAE.pth"]'
+    # Path to Wan2.1 Backbone
+    model_paths: '["models/Wan-AI/Wan2.1-T2V-14B/models_t5_umt5-xxl-enc-bf16.pth", "models/Wan-AI/Wan2.1-T2V-14B/Wan2.1_VAE.pth"]'
+    resume_from_checkpoint: "checkpoints/omnivid_alpha.safetensors"
+    
+    # LoRA Configuration
     lora_base_model: "dit"
     lora_target_modules: "self_attn.q,self_attn.k,self_attn.v,self_attn.o,ffn.0,ffn.2"
     lora_rank: 32
-    lora_modalities: ["com","pha","fgr","bgr"] 
-    resume_from_checkpoint: "checkpoints/omnivid_alpha.safetensors"
+    lora_modalities: ["com", "pha", "fgr", "bgr"]
 ```
 
 然后，你可以使用配置好的yaml文件进行inference
@@ -126,7 +138,6 @@ python scripts/inference_omnivid_alpha.py --config configs/omnivid_alpha_inferen
 
 # omnivid_intrinsic_inference
 python scripts/inference_omnivid_intrinsic.py --config configs/omnivid_intrinsic_inference.yaml
-
 ```
 ## 🏋️ Training
 
