@@ -123,7 +123,7 @@ inference_normal_path: null
 
 # --- Text Prompt ---
 # We recommend using Chinese prompts.
-prompt: 
+prompt: "一只小刺猬，穿着白色小围裙，头上戴着厨师帽，正站在小凳子上，双手举着一个小平底锅，锅里冒着热气，表情专注而自豪，位于一个现代化的迷你厨房中，不锈钢台面反射着明亮的光线，各种小厨具整齐地排列着, 镜头从右向左移动。"
 
 # --- Model Settings ---
 model:
