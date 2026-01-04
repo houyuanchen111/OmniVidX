@@ -152,10 +152,86 @@ Below are the 15 tasks (modes) supported by **OmniVid-Intrinsic** and **OmniVid-
 
 不同任务可以组合再一起，从而形成一些有趣的应用
 例如：
-t2RAIN -> IN2RA (Video Editing)
-
+t2RAIN -> IN2RA (Prompt-driven Video Editing)
+<table>
+  <tr>
+    <td style="border: none; vertical-align: top;">
+      <table>
+        <tr>
+          <td><video src="video1.mp4" width="100%" controls></video></td>
+          <td><video src="video2.mp4" width="100%" controls></video></td>
+        </tr>
+        <tr>
+          <td><video src="video3.mp4" width="100%" controls></video></td>
+          <td><video src="video4.mp4" width="100%" controls></video></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="text-align: center; font-weight: bold;">
+             Prompt: "一个开放式的现代极简厨房...", <br>t2RAIN
+          </td>
+        </tr>
+      </table>
+    </td>
+    <td style="border: none; vertical-align: middle; font-size: 50px; padding: 0 20px;">
+      &rarr;
+    </td>
+    <td style="border: none; vertical-align: top;">
+      <table>
+        <tr>
+          <td><video src="video5.mp4" width="100%" controls></video></td>
+        </tr>
+        <tr>
+          <td><video src="video6.mp4" width="100%" controls></video></td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-weight: bold;">
+            Prompt: "橙色的橙子放在不锈钢台子上..."<br>IN2RA
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 R2PFB -> PB2RF (Video Inpainting)
-
+<table>
+  <tr>
+    <td style="border: none; vertical-align: top;">
+      <table>
+        <tr>
+          <td><video src="video1.mp4" width="100%" controls></video></td>
+          <td><video src="video2.mp4" width="100%" controls></video></td>
+        </tr>
+        <tr>
+          <td><video src="video3.mp4" width="100%" controls></video></td>
+          <td><video src="video4.mp4" width="100%" controls></video></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="text-align: center; font-weight: bold;">
+             Prompt: "一个开放式的现代极简厨房...", <br>R2PFB
+          </td>
+        </tr>
+      </table>
+    </td>
+    <td style="border: none; vertical-align: middle; font-size: 50px; padding: 0 20px;">
+      &rarr;
+    </td>
+    <td style="border: none; vertical-align: top;">
+      <table>
+        <tr>
+          <td><video src="video5.mp4" width="100%" controls></video></td>
+        </tr>
+        <tr>
+          <td><video src="video6.mp4" width="100%" controls></video></td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-weight: bold;">
+            Prompt: "橙色的橙子放在不锈钢台子上..."<br>PB2RF
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
 ## 🏋️ Training
 
