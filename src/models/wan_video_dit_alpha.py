@@ -29,9 +29,7 @@ except ModuleNotFoundError:
     FLASH_ATTN_3_AVAILABLE = False
 
 
-_attn_save_counter = 0
-_attn_save_dir = "attn_maps"
-os.makedirs(_attn_save_dir, exist_ok=True)
+
 
 
 def flash_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, num_heads: int, compatibility_mode=False, drop_out:int = None):
