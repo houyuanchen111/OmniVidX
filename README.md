@@ -81,7 +81,7 @@ inference_normal_path: null
 
 # --- Text Prompt ---
 # We recommend using Chinese prompts.
-prompt: "一只小刺猬，穿着白色小围裙，头上戴着厨师帽，正站在小凳子上，双手举着一个小平底锅，锅里冒着热气，表情专注而自豪，位于一个现代化的迷你厨房中，不锈钢台面反射着明亮的光线，各种小厨具整齐地排列着, 镜头从右向左移动。"  
+prompt: 
 
 # --- Model Settings ---
 model:
@@ -140,6 +140,21 @@ python scripts/inference_omnivid_alpha.py --config configs/omnivid_alpha_inferen
 # omnivid_intrinsic_inference
 python scripts/inference_omnivid_intrinsic.py --config configs/omnivid_intrinsic_inference.yaml
 ```
+
+Below are the 15 tasks (modes) supported by **OmniVid-Intrinsic** and **OmniVid-Alpha**, along with their corresponding inputs and outputs:
+
+| Task Category | OmniVid-Intrinsic | OmniVid-Alpha |
+| :--- | :--- | :--- |
+| **Text $\to$ X** | `t2RAIN` | `t2RPFB` |
+| **X $\to$ X** | `R2AIN`, `RA2IN`, `RI2AN`, `RN2AI`, `RIN2A`, `RAN2I`, `RAI2N`, `AIN2R` | `R2PFB`, `RP2FB`, `RF2PB`, `RB2PF`, `FB2RP`, `PFB2R`, `RFB2P`, `RPB2F`, `RPF2B` |
+| **Text & X $\to$ X** | `A2RIN`, `I2RAN`, `N2RAI`, `AI2RN`, `AN2RI`, `IN2RA` | `P2RFB`, `F2RPB`, `B2RPF`, `PF2RB`, `PB2RF` |
+
+
+不同任务可以组合再一起，从而形成一些有趣的应用
+例如：
+t2RAIN -> IN2RA (Video Editing)
+
+R2PFB -> PB2RF (Video Inpainting)
 
 
 ## 🏋️ Training
