@@ -194,42 +194,39 @@ Below are the 15 tasks (modes) supported by **OmniVid-Intrinsic** and **OmniVid-
 
 Different tasks can be combined to enable interesting applications. For example:
 ### 1. `t2RAIN` $\to$ `IN2RA` (Prompt-driven Video Editing)
-
-<table width="100%" style="table-layout: fixed; width: 100%;">
+<table>
   <tr>
-    <td width="45%" style="vertical-align: top; padding: 0;">
-      <table width="100%">
+    <td style="border: none; vertical-align: top;">
+      <table>
         <tr>
-          <td width="50%"><img src="assets/video_editing/rgb_gen.gif" width="100%"></td>
-          <td width="50%"><img src="assets/video_editing/albedo_gen.gif" width="100%"></td>
+          <td><video src="assets/video_editing/rgb_gen.gif" width="100%" controls></video></td>
+          <td><video src="assets/video_editing/albedo_gen.gif" width="100%" controls></video></td>
         </tr>
         <tr>
-          <td><img src="assets/video_editing/irradiance_gen.gif" width="100%"></td>
-          <td><img src="assets/video_editing/normal_gen.gif" width="100%"></td>
+          <td><video src="assets/video_editing/irradiance_gen.gif" width="100%" controls></video></td>
+          <td><video src="assets/video_editing/normal_gen.gif" width="100%" controls></video></td>
         </tr>
         <tr>
-          <td colspan="2" style="text-align: center; font-size: 12px;">
-             Prompt: "一个开放式的现代极简厨房..."
+          <td colspan="2" style="text-align: center; font-weight: bold;">
+             Prompt: "一个开放式的现代极简厨房..."<br>t2RAIN
           </td>
         </tr>
       </table>
     </td>
-    
-    <td width="10%" style="vertical-align: middle; text-align: center; font-size: 30px;">
+    <td style="border: none; vertical-align: middle; font-size: 50px; padding: 0 20px;">
       &rarr;
     </td>
-
-    <td width="45%" style="vertical-align: top; padding: 0;">
-      <table width="100%">
+    <td style="border: none; vertical-align: top;">
+      <table>
         <tr>
-          <td width="100%"><img src="assets/video_editing/rgb_edit.gif" width="100%"></td>
+          <td><video src="assets/video_editing/rgb_edit.gif" width="100%" controls></video></td>
         </tr>
         <tr>
-          <td><img src="assets/video_editing/albedo_edit.gif" width="100%"></td>
+          <td><video src="assets/video_editing/albedo_edit.gif" width="100%" controls></video></td>
         </tr>
         <tr>
-          <td style="text-align: center; font-size: 12px;">
-            Prompt: "橙色的橙子放在不锈钢台子上..."
+          <td style="text-align: center; font-weight: bold;">
+            Prompt: "橙色的橙子放在不锈钢台子上..."<br>IN2RA
           </td>
         </tr>
       </table>
@@ -238,42 +235,39 @@ Different tasks can be combined to enable interesting applications. For example:
 </table>
 
 ### 2. `R2PFB` $\to$ `PB2RF` (Prompt-driven Video Inpainting)
-
-<table width="100%" style="table-layout: fixed; width: 100%;">
+<table>
   <tr>
-    <td width="45%" style="vertical-align: top; padding: 0;">
-      <table width="100%">
+    <td style="border: none; vertical-align: top;">
+      <table>
         <tr>
-          <td width="50%"><img src="assets/video_inpainting/input_bl.gif" width="100%"></td>
-          <td width="50%"><img src="assets/video_inpainting/alpha.gif" width="100%"></td>
+          <td><video src="assets/video_inpainting/input_bl.gif" width="100%" controls></video></td>
+          <td><video src="assets/video_inpainting/alpha.gif" width="100%" controls></video></td>
         </tr>
         <tr>
-          <td><img src="assets/video_inpainting/fg.gif" width="100%"></td>
-          <td><img src="assets/video_inpainting/bg.gif" width="100%"></td>
+          <td><video src="assets/video_inpainting/fg.gif" width="100%" controls></video></td>
+          <td><video src="assets/video_inpainting/bg.gif" width="100%" controls></video></td>
         </tr>
         <tr>
-          <td colspan="2" style="text-align: center; font-size: 12px;">
-             Prompt: ""
+          <td colspan="2" style="text-align: center; font-weight: bold;">
+             Prompt: ""<br>R2PFB
           </td>
         </tr>
       </table>
     </td>
-
-    <td width="10%" style="vertical-align: middle; text-align: center; font-size: 30px;">
+    <td style="border: none; vertical-align: middle; font-size: 50px; padding: 0 20px;">
       &rarr;
     </td>
-
-    <td width="45%" style="vertical-align: top; padding: 0;">
-      <table width="100%">
+    <td style="border: none; vertical-align: top;">
+      <table>
         <tr>
-          <td width="100%"><img src="assets/video_inpainting/repaint_bl.gif" width="100%"></td>
+          <td><video src="assets/video_inpainting/repaint_bl.gif" width="100%" controls></video></td>
         </tr>
         <tr>
-          <td><img src="assets/video_inpainting/repaint_fg.gif" width="100%"></td>
+          <td><video src="assets/video_inpainting/repaint_fg.gif" width="100%" controls></video></td>
         </tr>
         <tr>
-          <td style="text-align: center; font-size: 12px;">
-            Prompt: "带着墨镜，穿粉色西服的男人..."
+          <td style="text-align: center; font-weight: bold;">
+            Prompt: "带着墨镜，穿粉色西服的男人..."<br>PB2RF
           </td>
         </tr>
       </table>
