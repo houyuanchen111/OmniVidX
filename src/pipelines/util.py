@@ -1,8 +1,3 @@
-# type: ignore
-'''
-各个unit只提供一个初始的参考
-'''
-
 import torch, warnings, glob, os, types, torchvision
 import numpy as np
 from PIL import Image
@@ -90,7 +85,7 @@ class BasePipeline(torch.nn.Module):
 
     def preprocess_video(self, video, torch_dtype=None, device=None, pattern="B C T H W", min_value=-1, max_value=1):
         # Transform a list of PIL.Image to torch.Tensor
-        # if video is torch.Tensor, 处理其dtype之后正确的放置到对应device上
+
         if isinstance(video,torch.Tensor):
             video = video.to(dtype=torch_dtype or self.torch_dtype, device=device or self.device)
             assert video.ndim == 5 and video.shape[1] == 3
@@ -245,33 +240,8 @@ class WanVideoPipeline(BasePipeline):
         self.vace: VaceWanModel = None
         self.in_iteration_models = ("dit", "motion_controller", "vace")
         self.unit_runner = PipelineUnitRunner()
-        # self.units = [ # 硬编码
-        #     WanVideoUnit_ShapeChecker(),
-        #     WanVideoUnit_NoiseInitializer(),
-        #     WanVideoUnit_InputVideoEmbedder(),
-        #     WanVideoUnit_PromptEmbedder(),
-        #     WanVideoUnit_ImageEmbedder(),
-        #     WanVideoUnit_FunControl(),
-        #     WanVideoUnit_FunReference(),
-        #     WanVideoUnit_FunCameraControl(),
-        #     WanVideoUnit_SpeedControl(),
-        #     WanVideoUnit_VACE(),
-        #     WanVideoUnit_UnifiedSequenceParallel(),
-        #     WanVideoUnit_TeaCache(),
-        #     WanVideoUnit_CfgMerger(),
-        # ]
-        # if unit_names is None:
-        #     # 从硬编码改成软编码
-        #     unit_names = [
-        #         'ShapeChecker', 'NoiseInitializer', 'InputVideoEmbedder', 
-        #         'PromptEmbedder', 'ImageEmbedder', 'FunControl', 'FunReference',
-        #         'FunCameraControl', 'SpeedControl', 'VACE', 
-        #         'UnifiedSequenceParallel', 'TeaCache', 'CfgMerger'
-        #     ]
-        
-        # # 根据传入的名字列表，从注册表ALL_UNITS中查找对应的类并实例化
-        # self.units = [ALL_UNITS[name]() for name in unit_names] # 这边就是要严格一些
-        self.units: Optional[list[PipelineUnit]] = None # 这边一定要在实例化的时候手动赋值,同时这样写才是最最好的
+       
+        self.units: Optional[list[PipelineUnit]] = None 
         self.model_fn = model_fn_wan_video
         
     
@@ -286,7 +256,7 @@ class WanVideoPipeline(BasePipeline):
         timestep = self.scheduler.timesteps[timestep_id].to(dtype=self.torch_dtype, device=self.device)
         
         inputs["latents"] = self.scheduler.add_noise(inputs["input_latents"], inputs["noise"], timestep)
-        training_target = self.scheduler.training_target(inputs["input_latents"], inputs["noise"], timestep) # flow matching 训练方式的特有target
+        training_target = self.scheduler.training_target(inputs["input_latents"], inputs["noise"], timestep) 
         
         noise_pred = self.model_fn(**inputs, timestep=timestep)
         
@@ -467,7 +437,6 @@ class WanVideoPipeline(BasePipeline):
         redirect_common_files: bool = True,
         use_usp=False,
     ):
-        # Redirect model path, 调用以实现pipe的实例化
         if redirect_common_files:
             redirect_dict = {
                 "models_t5_umt5-xxl-enc-bf16.pth": "Wan-AI/Wan2.1-T2V-1.3B",
@@ -518,12 +487,12 @@ class WanVideoPipeline(BasePipeline):
         self,
         **kwargs 
     ):
-        # 只有inference的时候才会调用__call__()
+        
         inputs_shared = kwargs.copy()
         num_inference_steps = inputs_shared.pop("num_inference_steps", 50)
         denoising_strength = inputs_shared.get("denoising_strength", 1.0)
         sigma_shift = inputs_shared.get("sigma_shift", 5.0)
-        prompt = inputs_shared.pop("prompt", "") # 这个需要pop，避免重复输入
+        prompt = inputs_shared.pop("prompt", "")
         tea_cache_l1_thresh = inputs_shared.pop("tea_cache_l1_thresh", None)
         tea_cache_model_id = inputs_shared.pop("tea_cache_model_id", "")
         negative_prompt = inputs_shared.pop("negative_prompt", "")
@@ -598,7 +567,7 @@ class PipelineUnit:
         input_params_nega: Optional[dict[str, str]] = None,
         onload_model_names: Optional[tuple[str, ...]] = None
     ):
-        self.seperate_cfg = seperate_cfg # 这些attribute默认是False, 特定的类在init的时候会改变, such as prompt
+        self.seperate_cfg = seperate_cfg 
         self.take_over = take_over
         self.input_params = input_params
         self.input_params_posi = input_params_posi
@@ -607,7 +576,7 @@ class PipelineUnit:
 
 
     def process(self, pipe: WanVideoPipeline, inputs: dict, positive=True, **kwargs) -> dict:
-        raise NotImplementedError("`process` is not implemented.") # 强制子类必须实现该方法
+        raise NotImplementedError("`process` is not implemented.") 
 
 class PipelineUnitRunner:
     def __init__(self):
@@ -619,7 +588,7 @@ class PipelineUnitRunner:
             inputs_shared, inputs_posi, inputs_nega = unit.process(pipe, inputs_shared=inputs_shared, inputs_posi=inputs_posi, inputs_nega=inputs_nega)
         elif unit.seperate_cfg: # output = neg + cfg * (pos - neg)
             # Positive side
-            processor_inputs = {name: inputs_posi.get(name_) for name, name_ in unit.input_params_posi.items()} # 只拿取unit.input_params里面有的键值对
+            processor_inputs = {name: inputs_posi.get(name_) for name, name_ in unit.input_params_posi.items()} 
             if unit.input_params is not None:
                 for name in unit.input_params:
                     processor_inputs[name] = inputs_shared.get(name)
@@ -636,10 +605,10 @@ class PipelineUnitRunner:
             else:
                 inputs_nega.update(processor_outputs)
         else:
-            # 这三个语法都值得学习
-            processor_inputs = {name: inputs_shared.get(name) for name in unit.input_params} # 只取用inputs_shared里面的在unit.input_params里面的参数
-            processor_outputs = unit.process(pipe, **processor_inputs) # **操作符用于解包字典 **{"height": 512, "width": 768, "seed": 42} <==> height=512, width=768, seed=42
-            inputs_shared.update(processor_outputs) # dict 更新键值对的方式
+         
+            processor_inputs = {name: inputs_shared.get(name) for name in unit.input_params} 
+            processor_outputs = unit.process(pipe, **processor_inputs) 
+            inputs_shared.update(processor_outputs) 
         return inputs_shared, inputs_posi, inputs_nega
 
 class WanVideoUnit_ShapeChecker(PipelineUnit):
@@ -665,8 +634,7 @@ class WanVideoUnit_NoiseInitializer(PipelineUnit):
     
 
 class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
-    # 用vae将video(& ref img) encode 到 latent space
-    # 这个unit是必须的
+
     def __init__(self):
         super().__init__(
             input_params=("input_video", "noise", "tiled", "tile_size", "tile_stride", "vace_reference_image"),
@@ -679,14 +647,14 @@ class WanVideoUnit_InputVideoEmbedder(PipelineUnit):
                 inference_image = pipe.preprocess_image(inference_image.resize((width, height))).to(pipe.device)
                 inference_latents = pipe.vae.encode(inference_image, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
                 return {"latents": noise, "inference_image_latents": inference_latents}
-            return {"latents": noise} # 如果没有input_video，则直接从noise出发; noise和latent的shape相同
+            return {"latents": noise} 
         pipe.load_models_to_device(["vae"])
         input_video = pipe.preprocess_video(input_video) # list ot Image to tensor
         input_latents = pipe.vae.encode(input_video, device=pipe.device, tiled=tiled, tile_size=tile_size, tile_stride=tile_stride).to(dtype=pipe.torch_dtype, device=pipe.device)
         if vace_reference_image is not None:
             vace_reference_image = pipe.preprocess_video([vace_reference_image])
             vace_reference_latents = pipe.vae.encode(vace_reference_image, device=pipe.device).to(dtype=pipe.torch_dtype, device=pipe.device)
-            input_latents = torch.concat([vace_reference_latents, input_latents], dim=2) # 只是把renference image cat 到 input_video的首帧
+            input_latents = torch.concat([vace_reference_latents, input_latents], dim=2)
         if pipe.scheduler.training:
             return {"latents": noise, "input_latents": input_latents}
         else:
@@ -705,11 +673,10 @@ class WanVideoUnit_PromptEmbedder(PipelineUnit):
     def process(self, pipe: WanVideoPipeline, prompt, positive) -> dict:
         pipe.load_models_to_device(self.onload_model_names)
         prompt_emb = pipe.prompter.encode_prompt(prompt, positive=positive, device=pipe.device)
-        return {"context": prompt_emb} # 我觉得这个可以预处理保存成pth
+        return {"context": prompt_emb} 
 
 class WanVideoUnit_ImageEmbedder(PipelineUnit):
     def __init__(self):
-        # i2v，用了clip
         super().__init__(
             input_params=("input_image", "end_image", "num_frames", "height", "width", "tiled", "tile_size", "tile_stride"),
             onload_model_names=("image_encoder", "vae")
@@ -821,15 +788,12 @@ class WanVideoUnit_SpeedControl(PipelineUnit):
         super().__init__(input_params=("motion_bucket_id",))
 
     def process(self, pipe: WanVideoPipeline, motion_bucket_id):
-        # motion_bucket_id: int
-        # 用于ctrl运动的强度, low -> slow, high -> fast
         if motion_bucket_id is None:
             return {}
         motion_bucket_id = torch.Tensor((motion_bucket_id,)).to(dtype=pipe.torch_dtype, device=pipe.device)
         return {"motion_bucket_id": motion_bucket_id}
 
 class WanVideoUnit_VACE(PipelineUnit):
-    # for video editing
     def __init__(self):
         super().__init__(
             input_params=("vace_video", "vace_mask", "vace_reference_image", "vace_scale", "height", "width", "num_frames", "tiled", "tile_size", "tile_stride"),
@@ -879,7 +843,6 @@ class WanVideoUnit_VACE(PipelineUnit):
             return {"vace_context": None, "vace_scale": vace_scale}
 
 class WanVideoUnit_UnifiedSequenceParallel(PipelineUnit):
-    # training and inference
     def __init__(self):
         super().__init__(input_params=())
 
@@ -890,7 +853,6 @@ class WanVideoUnit_UnifiedSequenceParallel(PipelineUnit):
         return {}
 
 class WanVideoUnit_TeaCache(PipelineUnit):
-    # 加速模型推理, inference only
     def __init__(self):
         super().__init__(
             seperate_cfg=True,
@@ -1110,7 +1072,7 @@ def model_fn_wan_video(
         timestep = torch.concat([timestep] * context.shape[0], dim=0)
     
     if dit.has_image_input: # y 是 ctrl video latent 
-        x = torch.cat([x, y], dim=1)  # (b, c_x + c_y, f, h, w) # cat在channel维度
+        x = torch.cat([x, y], dim=1)  
         clip_embdding = dit.img_emb(clip_feature)
         context = torch.cat([clip_embdding, context], dim=1)
     
@@ -1123,14 +1085,14 @@ def model_fn_wan_video(
         if len(reference_latents.shape) == 5:
             reference_latents = reference_latents[:, :, 0]
         reference_latents = dit.ref_conv(reference_latents).flatten(2).transpose(1, 2)
-        x = torch.concat([reference_latents, x], dim=1) # cat 在L维度
+        x = torch.concat([reference_latents, x], dim=1) 
         f += 1
     
     freqs = torch.cat([
         dit.freqs[0][:f].view(f, 1, 1, -1).expand(f, h, w, -1),
         dit.freqs[1][:h].view(1, h, 1, -1).expand(f, h, w, -1),
         dit.freqs[2][:w].view(1, 1, w, -1).expand(f, h, w, -1)
-    ], dim=-1).reshape(f * h * w, 1, -1).to(x.device) # 3d rope, 记录帧间时序
+    ], dim=-1).reshape(f * h * w, 1, -1).to(x.device) 
     
     # TeaCache
     if tea_cache is not None:
@@ -1207,47 +1169,3 @@ def vae_normal_output_to_video(vae_output, pattern="B C T H W", min_value=-1, ma
         video_normal_unit.append(normal_unit)
     return torch.stack(video_normal_unit, dim=1)
 
-def robust_min_max_normalize(
-    tensor: torch.Tensor, 
-    quantiles: tuple[float, float] = (0.001, 0.99), 
-    per_channel: bool = False, 
-    eps: float = 1e-6
-) -> torch.Tensor:
-    """
-    Args:
-        tensor: [H, W, 3]
-        quantiles: (0.001, 0.99)
-        per_channel: True
-        eps: 1e-6
-    Returns:
-        [H, W, 3]
-    """
-    assert tensor.ndim == 3 and tensor.shape[2] == 3, f"输入张量形状应为 [H, W, 3]，但得到 {tensor.shape}"
-    tensor_cache = tensor.clone()
-    tensor = tensor.to(torch.float32)
-    if per_channel:
-        tensor_flat = tensor.permute(2, 0, 1).flatten(start_dim=1)
-        min_vals = torch.nanquantile(tensor_flat, quantiles[0], dim=1)
-        max_vals = torch.nanquantile(tensor_flat, quantiles[1], dim=1)
-        min_vals = min_vals.view(1, 1, 3)
-        max_vals = max_vals.view(1, 1, 3)
-
-    else:
-        min_vals = torch.nanquantile(tensor, quantiles[0])
-        max_vals = torch.nanquantile(tensor, quantiles[1])
-    denominator = max_vals - min_vals
-    denominator = torch.where(denominator < eps, torch.tensor(eps, device=tensor.device), denominator)
-    normalized_tensor = (tensor - min_vals) / denominator
-    normalized_tensor = torch.clamp(normalized_tensor, 0, 1)
-    normalized_tensor = normalized_tensor.to(tensor_cache.dtype)
-    return normalized_tensor 
-def vae_disparity_and_depth_output_to_video(vae_output, pattern="B C T H W"):
-    # 这个处理不知道合不合理，mask先不加
-    if pattern != "T H W C":
-        vae_output = reduce(vae_output, f"{pattern} -> T H W C", reduction="mean")
-    assert vae_output.min() >= -1 and vae_output.max() <= 1, "disparity is not in [-1,1]"
-    for i in range(vae_output.shape[0]):
-        image = vae_output[i] # H W C
-        image = robust_min_max_normalize(image)
-        vae_output[i] = image * 2 - 1  # 这个是为了算loss的
-    return vae_output.permute(3,0,1,2) # C T H W

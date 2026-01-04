@@ -14,9 +14,9 @@ class FlowMatchScheduler():
 
     def set_timesteps(self, num_inference_steps=100, denoising_strength=1.0, training=False, shift=None):
         if shift is not None:
-            self.shift = shift # 非线性去噪, shift大于1,前期多，后期少
+            self.shift = shift 
         sigma_start = self.sigma_min + (self.sigma_max - self.sigma_min) * denoising_strength
-        if self.extra_one_step: # 为了结果更加鲁棒
+        if self.extra_one_step: 
             self.sigmas = torch.linspace(sigma_start, self.sigma_min, num_inference_steps + 1)[:-1]
         else:
             self.sigmas = torch.linspace(sigma_start, self.sigma_min, num_inference_steps)
@@ -59,35 +59,25 @@ class FlowMatchScheduler():
         return model_output
     
     
-    def add_noise(self, original_samples, noise, timestep): # timestep 越小越不加噪
+    def add_noise(self, original_samples, noise, timestep): 
         if isinstance(timestep, torch.Tensor):
             timestep = timestep.cpu()
         elif isinstance(timestep, (list, tuple)):
             timestep = torch.tensor(timestep)
 
-        # 支持 timestep 是 list 或 tensor，其中不同元素对应不同模态的时间步
         if isinstance(timestep, torch.Tensor) and timestep.dim() > 0:
-            # timestep 是向量，每个元素对应不同模态的时间步
             if timestep.dim() == 1:
-                # timestep: (num_modalities,)
                 num_modalities = timestep.shape[0]
-                if original_samples.shape[0] != num_modalities:
-                    raise ValueError(f"timestep 的长度 ({num_modalities}) 应该等于 original_samples 的第一维大小 ({original_samples.shape[0]})")
-
-                # 为每个模态计算对应的 sigma
                 timestep_ids = torch.argmin((self.timesteps.unsqueeze(0) - timestep.unsqueeze(1)).abs(), dim=1)
-                sigmas = self.sigmas[timestep_ids]  # shape: (num_modalities,)
+                sigmas = self.sigmas[timestep_ids] 
 
-                # 扩展 sigmas 的维度以匹配 original_samples 和 noise 的形状
-                # original_samples 和 noise 的形状: (num_modalities, C, T, H, W)
                 sigmas = sigmas.view(num_modalities, *([1] * (original_samples.dim() - 1))).to(original_samples.device).to(original_samples.dtype)
 
                 sample = (1 - sigmas) * original_samples + sigmas * noise
                 return sample, sigmas
             else:
-                raise ValueError(f"timestep 张量维度应该为 1，当前维度为 {timestep.dim()}")
+                raise ValueError 
         else:
-            # timestep 是标量，保持原有逻辑（向后兼容）
             timestep_id = torch.argmin((self.timesteps - timestep).abs())
             sigma = self.sigmas[timestep_id]
             sample = (1 - sigma) * original_samples + sigma * noise
@@ -95,7 +85,6 @@ class FlowMatchScheduler():
     
 
     def training_target(self, sample, noise, timestep):
-        # 和timestep无关
         target = noise - sample
         return target
     

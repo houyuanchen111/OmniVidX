@@ -1,6 +1,3 @@
-'''
-这里放“公理”级别的util function
-'''
 import torch, os
 from safetensors import safe_open
 from contextlib import contextmanager
@@ -179,7 +176,7 @@ def split_state_dict_with_prefix(state_dict):
     return state_dicts
 
 
-def hash_state_dict_keys(state_dict, with_shape=True): # 计算哈希值，快速判断两个state_dict是否相同
+def hash_state_dict_keys(state_dict, with_shape=True): 
     keys_str = convert_state_dict_keys_to_single_str(state_dict, with_shape=with_shape)
     keys_str = keys_str.encode(encoding="UTF-8")
     return hashlib.md5(keys_str).hexdigest()
