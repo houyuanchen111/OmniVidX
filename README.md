@@ -150,9 +150,8 @@ Below are the 15 tasks (modes) supported by **OmniVid-Intrinsic** and **OmniVid-
 | **Text & X $\to$ X** | `A2RIN`, `I2RAN`, `N2RAI`, `AI2RN`, `AN2RI`, `IN2RA` | `P2RFB`, `F2RPB`, `B2RPF`, `PF2RB`, `PB2RF` |
 
 
-不同任务可以组合再一起，从而形成一些有趣的应用
-例如：
-t2RAIN -> IN2RA (Prompt-driven Video Editing)
+Different tasks can be combined to enable interesting applications. For example:
+### 1. `t2RAIN` $\to$ `IN2RA` (Prompt-driven Video Editing)
 <table>
   <tr>
     <td style="border: none; vertical-align: top;">
@@ -167,7 +166,7 @@ t2RAIN -> IN2RA (Prompt-driven Video Editing)
         </tr>
         <tr>
           <td colspan="2" style="text-align: center; font-weight: bold;">
-             Prompt: "一个开放式的现代极简厨房...", <br>t2RAIN
+             Prompt: "一个开放式的现代极简厨房..."<br>t2RAIN
           </td>
         </tr>
       </table>
@@ -192,22 +191,23 @@ t2RAIN -> IN2RA (Prompt-driven Video Editing)
     </td>
   </tr>
 </table>
-R2PFB -> PB2RF (Video Inpainting)
+
+### 2. `R2PFB` $\to$ `PB2RF` (Prompt-driven Video Inpainting)
 <table>
   <tr>
     <td style="border: none; vertical-align: top;">
       <table>
         <tr>
-          <td><video src="video1.mp4" width="100%" controls></video></td>
-          <td><video src="video2.mp4" width="100%" controls></video></td>
+          <td><video src="assets/video_inpainting/input_bl.mp4" width="100%" controls></video></td>
+          <td><video src="assets/video_inpainting/alpha.mp4" width="100%" controls></video></td>
         </tr>
         <tr>
-          <td><video src="video3.mp4" width="100%" controls></video></td>
-          <td><video src="video4.mp4" width="100%" controls></video></td>
+          <td><video src="assets/video_inpainting/fg.mp4" width="100%" controls></video></td>
+          <td><video src="assets/video_inpainting/bg.mp4" width="100%" controls></video></td>
         </tr>
         <tr>
           <td colspan="2" style="text-align: center; font-weight: bold;">
-             Prompt: "一个开放式的现代极简厨房...", <br>R2PFB
+             Prompt: ""<br>R2PFB
           </td>
         </tr>
       </table>
@@ -218,14 +218,14 @@ R2PFB -> PB2RF (Video Inpainting)
     <td style="border: none; vertical-align: top;">
       <table>
         <tr>
-          <td><video src="video5.mp4" width="100%" controls></video></td>
+          <td><video src="assets/video_inpainting/repaint_bl.mp4" width="100%" controls></video></td>
         </tr>
         <tr>
-          <td><video src="video6.mp4" width="100%" controls></video></td>
+          <td><video src="assets/video_inpainting/repaint_fg.mp4" width="100%" controls></video></td>
         </tr>
         <tr>
           <td style="text-align: center; font-weight: bold;">
-            Prompt: "橙色的橙子放在不锈钢台子上..."<br>PB2RF
+            Prompt: "带着墨镜，穿粉色西服的男人..."<br>PB2RF
           </td>
         </tr>
       </table>
@@ -233,8 +233,10 @@ R2PFB -> PB2RF (Video Inpainting)
   </tr>
 </table>
 
-## 🏋️ Training
+More applications await your exploration.
 
+---
+## 🏋️ Training
 To train OmniVidX on your own dataset, format the data as follows:
 
 dataset/
@@ -258,8 +260,8 @@ accelerate launch train.py \
   --gradient_accumulation_steps 4 \
   --use_sc_masking True \
   --lora_rank 32
-
-📊 Citation
+---
+## 📊 Citation
 
 If you find this work useful, please cite:
 

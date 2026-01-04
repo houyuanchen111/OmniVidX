@@ -1,0 +1,1 @@
+python scripts/inference_omnivid_intrinsic.py --config configs/omnivid_intrinsic_inference.yaml
