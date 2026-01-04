@@ -158,12 +158,12 @@ t2RAIN -> IN2RA (Prompt-driven Video Editing)
     <td style="border: none; vertical-align: top;">
       <table>
         <tr>
-          <td><video src="video1.mp4" width="100%" controls></video></td>
-          <td><video src="video2.mp4" width="100%" controls></video></td>
+          <td><video src="assets/video_editing/rgb_gen.mp4" width="100%" controls></video></td>
+          <td><video src="assets/video_editing/albedo_gen.mp4" width="100%" controls></video></td>
         </tr>
         <tr>
-          <td><video src="video3.mp4" width="100%" controls></video></td>
-          <td><video src="video4.mp4" width="100%" controls></video></td>
+          <td><video src="assets/video_editing/irradiance_gen.mp4" width="100%" controls></video></td>
+          <td><video src="assets/video_editing/normal_gen.mp4" width="100%" controls></video></td>
         </tr>
         <tr>
           <td colspan="2" style="text-align: center; font-weight: bold;">
@@ -178,10 +178,10 @@ t2RAIN -> IN2RA (Prompt-driven Video Editing)
     <td style="border: none; vertical-align: top;">
       <table>
         <tr>
-          <td><video src="video5.mp4" width="100%" controls></video></td>
+          <td><video src="assets/video_editing/rgb_edit.mp4" width="100%" controls></video></td>
         </tr>
         <tr>
-          <td><video src="video6.mp4" width="100%" controls></video></td>
+          <td><video src="assets/video_editing/albedo_edit.mp4" width="100%" controls></video></td>
         </tr>
         <tr>
           <td style="text-align: center; font-weight: bold;">
