@@ -226,7 +226,7 @@ Different tasks can be combined to enable interesting applications. For example:
         </tr>
         <tr>
           <td style="text-align: center; font-weight: bold;">
-            Prompt: "橙色的橙子放在不锈钢台子上..."<br>IN2RA
+            Prompt: "橙子放在不锈钢台上..."<br>IN2RA
           </td>
         </tr>
       </table>
