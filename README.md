@@ -208,7 +208,7 @@ Different tasks can be combined to enable interesting applications. For example:
         </tr>
         <tr>
           <td colspan="2" style="text-align: center; font-weight: bold;">
-             Prompt: "一个开放式的现代极简厨房..."<br>t2RAIN
+             "一个开放式的现代极简厨房..."<br>t2RAIN
           </td>
         </tr>
       </table>
@@ -226,7 +226,7 @@ Different tasks can be combined to enable interesting applications. For example:
         </tr>
         <tr>
           <td style="text-align: center; font-weight: bold;">
-            Prompt: "橙子放在不锈钢台上..."<br>IN2RA
+            "橙子放在不锈钢台上..."<br>IN2RA
           </td>
         </tr>
       </table>
@@ -249,7 +249,7 @@ Different tasks can be combined to enable interesting applications. For example:
         </tr>
         <tr>
           <td colspan="2" style="text-align: center; font-weight: bold;">
-             Prompt: ""<br>R2PFB
+             ""<br>R2PFB
           </td>
         </tr>
       </table>
@@ -267,7 +267,7 @@ Different tasks can be combined to enable interesting applications. For example:
         </tr>
         <tr>
           <td style="text-align: center; font-weight: bold;">
-            Prompt: "带墨镜，穿粉色西装..."<br>PB2RF
+            "带墨镜，穿粉色西装..."<br>PB2RF
           </td>
         </tr>
       </table>
