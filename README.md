@@ -1,4 +1,45 @@
-# OmniVidX: Omni-directional Video Generation in One Diffusion Model
+## ___***OmniVidX: Omni-directional Video Generation in One Diffusion Model***___
+
+<div align="center">
+    <a href='https://github.com/houyuanchen111' target='_blank'>Houyuan Chen</a><sup>1</sup>&emsp;
+    <a href='https://github.com/Luh1124' target='_blank'>Hong Li</a><sup>2</sup>&emsp;       
+    <a href='https://refkxh.github.io/' target='_blank'>Xianghao Kong</a><sup>1</sup>&emsp;   
+    <a href='' target='_blank'>Tianrui Zhu</a><sup>3</sup>&emsp;
+    <a href='https://guoyww.github.io/' target='_blank'>Yuwei Guo</a><sup>4</sup><br>
+    <a href='https://hugoycj.github.io/' target='_blank'>Chongjie Ye</a><sup>5</sup>&emsp;
+    <a href='https://lllyasviel.github.io/lvmin_zhang/' target='_blank'>Lvmin Zhang</a><sup>6</sup>&emsp;
+    <a href='https://sites.google.com/view/fromandto' target='_blank'>Hao Zhao</a><sup>7</sup>&emsp;
+    <a href='https://anyirao.com/' target='_blank'>Anyi Rao</a><sup>1,*</sup>
+</div>
+
+<div>
+<div align="center">
+    <sup>1</sup>MMLab, HKUST, &emsp;
+    <sup>2</sup>Behang University&emsp;
+    <sup>3</sup>Nanjing University&emsp;
+    <sup>4</sup>CUHK&emsp;
+    <sup>5</sup>FNii, CUHKSZ&emsp;
+    <sup>6</sup>Stanford University&emsp;
+    <sup>7</sup>AIR,THU<br>
+</div>
+</div>
+
+
+<p align="center">
+  <a href="">
+    <img src="https://img.shields.io/badge/arXiv-PDF-b31b1b" alt="Paper">
+  </a>
+  <a href="">
+    <img src="https://raw.githubusercontent.com/prs-eth/Marigold/main/doc/badges/badge-website.svg" alt="Website">
+  </a>
+  <a href="">
+    <img src="https://img.shields.io/badge/🤗%20Hugging%20Face%20-Model-green" alt="Hugging Face Model">
+  </a>
+  <a href="https://www.apache.org/licenses/LICENSE-2.0">
+    <img src="https://img.shields.io/badge/License-Apache--2.0-929292" alt="License">
+  </a>
+</p>
+
 
 <div align="center">
   <img src="assets/teaser.png" width="800px" alt="OmniVidX Teaser">
@@ -8,12 +49,13 @@
 
 ## 📖 Overview
 
-TODO
+We introduce ***OmniVidX***, a unified video diffusion framework that transcends the boundaries of task-specific models. 
+By incorporating Stochastic Condition Masking (SCM), Decoupled Gated LoRA (DGL), and Cross-Modal Self-Attention (CMSA), a single model can achieve **Omni-directional** video generation and perception. Whether applied to Intrinsic tasks (**OmniVid-Intrinsic**) or Alpha channel processing (**OmniVid-Alpha**), our approach achieves outstanding performance with remarkable data efficiency (<1k training videos).
 
 ---
 
 ## 🚀 News
-- **[2026/05/15]** Initial release of **OmniVidX**.
+- **[2026/01/04]** Initial release of **OmniVidX**.
 ---
 
 ## 🛠️ Installation
@@ -238,20 +280,20 @@ More applications await your exploration.
 ---
 
 ## 🏋️ Training
-我们使用accelerate来训练模型。训练的yaml文件在configs/omnivid_intrinsic_train.yaml和configs/omnivid_alpha_train.yaml中
-启动命令是
-```bash
-# OmniVid-Intrinsic
-accelerate launch \
-    --config_file "configs/accelerate_config.yaml" \
-    "scripts/train.py" \
-    --config "configs/omnivid_intrinsic_train.yaml"     
-# OmniVid-Alpha
-accelerate launch \
-    --config_file "configs/accelerate_config.yaml" \
-    "scripts/train.py" \
-    --config "configs/omnivid_alpha_train.yaml"     
+We utilize `accelerate` for distributed training. The training configurations are provided in `configs/omnivid_intrinsic_train.yaml` and `configs/omnivid_alpha_train.yaml`.
 
+Run the following commands to start training:
+
+```bash
+# 1. Train OmniVid-Intrinsic
+accelerate launch --config_file "configs/accelerate_config.yaml" \
+    "scripts/train.py" \
+    --config "configs/omnivid_intrinsic_train.yaml"
+
+# 2. Train OmniVid-Alpha
+accelerate launch --config_file "configs/accelerate_config.yaml" \
+    "scripts/train.py" \
+    --config "configs/omnivid_alpha_train.yaml"
 ```
 
 
@@ -260,7 +302,7 @@ accelerate launch \
 If you find this work useful, please cite:
 
 ```bibtex
-TODO
+
 ```
 
 ## 📝 Acknowledgements
