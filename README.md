@@ -260,10 +260,10 @@ Different tasks can be combined to enable interesting applications. For example:
     <td style="border: none; vertical-align: top;">
       <table>
         <tr>
-          <td><img src="assets/video_inpainting/repaint_bl.gif" width="100%"></td>
+          <td><img src="assets/video_inpainting/inpaint_bl.gif" width="100%"></td>
         </tr>
         <tr>
-          <td><img src="assets/video_inpainting/repaint_fg.gif" width="100%"></td>
+          <td><img src="assets/video_inpainting/inpaint_fg.gif" width="100%"></td>
         </tr>
         <tr>
           <td style="text-align: center; font-weight: bold;">
