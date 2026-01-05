@@ -15,11 +15,11 @@
 <div>
 <div align="center">
     <sup>1</sup>MMLab, HKUST, &emsp;
-    <sup>2</sup>Beihang University&emsp;
-    <sup>3</sup>Nanjing University&emsp;
+    <sup>2</sup>BUAA&emsp;
+    <sup>3</sup>NJU&emsp;
     <sup>4</sup>CUHK&emsp;
     <sup>5</sup>FNii, CUHKSZ&emsp;
-    <sup>6</sup>Stanford University&emsp;
+    <sup>6</sup>Stanford&emsp;
     <sup>7</sup>AIR,THU<br>
 </div>
 </div>
