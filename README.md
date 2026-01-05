@@ -4,7 +4,7 @@
     <a href='https://github.com/houyuanchen111' target='_blank'>Houyuan Chen</a><sup>1</sup>&emsp;
     <a href='https://github.com/Luh1124' target='_blank'>Hong Li</a><sup>2</sup>&emsp;       
     <a href='https://refkxh.github.io/' target='_blank'>Xianghao Kong</a><sup>1</sup>&emsp;   
-    <a href='' target='_blank'>Tianrui Zhu</a><sup>3</sup>&emsp;
+    <a href='https://github.com/trzhu11' target='_blank'>Tianrui Zhu</a><sup>3</sup>&emsp;
     <a href='https://guoyww.github.io/' target='_blank'>Yuwei Guo</a><sup>4</sup><br>
     <a href='https://hugoycj.github.io/' target='_blank'>Chongjie Ye</a><sup>5</sup>&emsp;
     <a href='https://lllyasviel.github.io/lvmin_zhang/' target='_blank'>Lvmin Zhang</a><sup>6</sup>&emsp;
