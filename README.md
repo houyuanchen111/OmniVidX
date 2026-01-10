@@ -1,4 +1,4 @@
-## ___***OmniVidX: Omni-directional Video Generation in One Diffusion Model***___
+## ___***UniVidX: A Unified Multimodal Framework for Versatile Video Generation via Diffusion Priors***___
 
 <div align="center">
     <a href='https://github.com/houyuanchen111' target='_blank'>Houyuan Chen</a><sup>1</sup>&emsp;
@@ -42,32 +42,32 @@
 
 
 <div align="center">
-  <img src="assets/teaser.png" width="800px" alt="OmniVidX Teaser">
+  <img src="assets/teaser.png" width="800px" alt="UniVidX Teaser">
   <br>
 </div>
 
 
 ## 📖 Overview
 
-We introduce ***OmniVidX***, a unified video diffusion framework that transcends the boundaries of task-specific models. 
-By incorporating Stochastic Condition Masking (SCM), Decoupled Gated LoRA (DGL), and Cross-Modal Self-Attention (CMSA), a single model can achieve **Omni-directional** video generation and perception. Whether applied to Intrinsic tasks (**OmniVid-Intrinsic**) or Alpha channel processing (**OmniVid-Alpha**), our approach achieves outstanding performance with remarkable data efficiency (<1k training videos).
+We introduce ***UniVidX***, a unified video diffusion framework that transcends the boundaries of task-specific models. 
+By incorporating Stochastic Condition Masking (SCM), Decoupled Gated LoRA (DGL), and Cross-Modal Self-Attention (CMSA), a single model can achieve **Omni-directional** video generation and perception. Whether applied to Intrinsic tasks (**UniVid-Intrinsic**) or Alpha channel processing (**UniVid-Alpha**), our approach achieves outstanding performance with remarkable data efficiency (<1k training videos).
 
 ---
 
 ## 🚀 News
-- **[2026/01/04]** Initial release of **OmniVidX**.
+- **[2026/01/04]** Initial release of **UniVidX**.
 ---
 
 ## 🛠️ Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/OmniVidX.git
-cd OmniVidX
+git clone https://github.com/your-username/UniVidX.git
+cd UniVidX
 
 # Create environment
-conda create -n omnividx python=3.10
-conda activate omnividx
+conda create -n unividx python=3.10
+conda activate unividx
 
 # Install dependencies
 pip install -r requirements.txt
@@ -91,12 +91,12 @@ mkdir -p ./models/Wan-AI
 huggingface-cli download Wan-AI/Wan2.1-T2V-14B --local-dir ./models/Wan-AI/Wan2.1-T2V-14B
 ```
 
-Then, download checkpoints of **OmniVid-Intrinsic** and **OmniVid-Alpha** manually from Hugging Face or let the scripts auto-download them.
+Then, download checkpoints of **UniVid-Intrinsic** and **UniVid-Alpha** manually from Hugging Face or let the scripts auto-download them.
 
 | Model Name | Link |
 | :--- | :--- |
-| OmniVid-Intrinsic | 🤗 Download |
-| OmniVid-Alpha | 🤗 Download |
+| UniVid-Intrinsic | 🤗 Download |
+| UniVid-Alpha | 🤗 Download |
 
 ```bash
 TODO
@@ -104,14 +104,14 @@ TODO
 ---
 
 ## 💻 Inference
-We use YAML files to centrally manage inference parameters. Below are the configuration templates for **OmniVid-Intrinsic** and **OmniVid-Alpha**.
+We use YAML files to centrally manage inference parameters. Below are the configuration templates for **UniVid-Intrinsic** and **UniVid-Alpha**.
 
-#### OmniVid-Intrinsic
+#### UniVid-Intrinsic
 
 ```yaml
-# configs/omnivid_intrinsic_inference.yaml
+# configs/univid_intrinsic_inference.yaml
 
-experiment_name: "omnivid_intrinsic_inference"   # Output folder name
+experiment_name: "univid_intrinsic_inference"   # Output folder name
 mode: "t2RAIN"                                   # Task Mode (One of the 15 supported tasks)
 
 # --- Conditional Inputs ---
@@ -127,11 +127,11 @@ prompt: "一只小刺猬，穿着白色小围裙，头上戴着厨师帽，正�
 
 # --- Model Settings ---
 model:
-  name: 'OmniVidIntrinsic' 
+  name: 'UniVidIntrinsic' 
   params:
     # Path to Wan2.1 Backbone
     model_paths: '["models/Wan-AI/Wan2.1-T2V-14B/models_t5_umt5-xxl-enc-bf16.pth", "models/Wan-AI/Wan2.1-T2V-14B/Wan2.1_VAE.pth"]'
-    resume_from_checkpoint: "checkpoints/omnivid_intrinsic.safetensors"
+    resume_from_checkpoint: "checkpoints/univid_intrinsic.safetensors"
     
     # LoRA Configuration
     lora_base_model: "dit"
@@ -140,12 +140,12 @@ model:
     lora_modalities: ["rgb", "albedo", "irradiance", "normal"]
 ```
 
-#### OmniVid-Alpha
+#### UniVid-Alpha
 
 ```yaml
-# configs/omnivid_alpha_inference.yaml
+# configs/univid_alpha_inference.yaml
 
-experiment_name: "omnivid_alpha_inference"   # Output folder name
+experiment_name: "univid_alpha_inference"   # Output folder name
 mode: "R2PFB"                                # Task Mode (One of the 15 supported tasks)
 
 
@@ -161,11 +161,11 @@ prompt: ""
 
 # --- Model Settings ---
 model:
-  name: 'OmniVidAlpha' 
+  name: 'UniVidAlpha' 
   params:
     # Path to Wan2.1 Backbone
     model_paths: '["models/Wan-AI/Wan2.1-T2V-14B/models_t5_umt5-xxl-enc-bf16.pth", "models/Wan-AI/Wan2.1-T2V-14B/Wan2.1_VAE.pth"]'
-    resume_from_checkpoint: "checkpoints/omnivid_alpha.safetensors"
+    resume_from_checkpoint: "checkpoints/univid_alpha.safetensors"
     
     # LoRA Configuration
     lora_base_model: "dit"
@@ -176,16 +176,16 @@ model:
 
 Once your YAML configuration is ready, run the corresponding inference script:
 ```bash
-# omnivid_alpha_inference
-python scripts/inference_omnivid_alpha.py --config configs/omnivid_alpha_inference.yaml
+# univid_alpha_inference
+python scripts/inference_univid_alpha.py --config configs/univid_alpha_inference.yaml
 
-# omnivid_intrinsic_inference
-python scripts/inference_omnivid_intrinsic.py --config configs/omnivid_intrinsic_inference.yaml
+# univid_intrinsic_inference
+python scripts/inference_univid_intrinsic.py --config configs/univid_intrinsic_inference.yaml
 ```
 
-Below are the 15 tasks (modes) supported by **OmniVid-Intrinsic** and **OmniVid-Alpha**, along with their corresponding inputs and outputs:
+Below are the 15 tasks (modes) supported by **UniVid-Intrinsic** and **UniVid-Alpha**, along with their corresponding inputs and outputs:
 
-| Task Category | OmniVid-Intrinsic | OmniVid-Alpha |
+| Task Category | UniVid-Intrinsic | UniVid-Alpha |
 | :--- | :--- | :--- |
 | **Text $\to$ X** | `t2RAIN` | `t2RPFB` |
 | **X $\to$ X** | `R2AIN`, `RA2IN`, `RI2AN`, `RN2AI`, `RIN2A`, `RAN2I`, `RAI2N`, `AIN2R` | `R2PFB`, `RP2FB`, `RF2PB`, `RB2PF`, `FB2RP`, `PFB2R`, `RFB2P`, `RPB2F`, `RPF2B` |
@@ -280,20 +280,20 @@ More applications await your exploration.
 ---
 
 ## 🏋️ Training
-We utilize `accelerate` for distributed training. The training configurations are provided in `configs/omnivid_intrinsic_train.yaml` and `configs/omnivid_alpha_train.yaml`.
+We utilize `accelerate` for distributed training. The training configurations are provided in `configs/univid_intrinsic_train.yaml` and `configs/univid_alpha_train.yaml`.
 
 Run the following commands to start training:
 
 ```bash
-# 1. Train OmniVid-Intrinsic
+# 1. Train UniVid-Intrinsic
 accelerate launch --config_file "configs/accelerate_config.yaml" \
     "scripts/train.py" \
-    --config "configs/omnivid_intrinsic_train.yaml"
+    --config "configs/univid_intrinsic_train.yaml"
 
-# 2. Train OmniVid-Alpha
+# 2. Train UniVid-Alpha
 accelerate launch --config_file "configs/accelerate_config.yaml" \
     "scripts/train.py" \
-    --config "configs/omnivid_alpha_train.yaml"
+    --config "configs/univid_alpha_train.yaml"
 ```
 
 
