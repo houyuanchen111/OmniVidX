@@ -49,8 +49,8 @@
 
 ## 📖 Overview
 
-We introduce ***UniVidX***, a unified video diffusion framework that transcends the boundaries of task-specific models. 
-By incorporating Stochastic Condition Masking (SCM), Decoupled Gated LoRA (DGL), and Cross-Modal Self-Attention (CMSA), a single model can achieve **Omni-directional** video generation and perception. Whether applied to Intrinsic tasks (**UniVid-Intrinsic**) or Alpha channel processing (**UniVid-Alpha**), our approach achieves outstanding performance with remarkable data efficiency (<1k training videos).
+We introduce ***UniVidX***, a unified multimodal video diffusion framework that transcends the boundaries of task-specific models. 
+By incorporating Stochastic Condition Masking (SCM), Decoupled Gated LoRA (DGL), and Cross-Modal Self-Attention (CMSA), a single model can achieve versatile video generation and perception. Whether applied to Intrinsic tasks (**UniVid-Intrinsic**) or Alpha channel processing (**UniVid-Alpha**), our approach achieves outstanding performance with remarkable data efficiency (<1k training videos).
 
 ---
 
